@@ -8,6 +8,7 @@ const perLevel = {};
 for (const g of SM.G) {
   perLevel[g.L] = (perLevel[g.L] || 0) + 1;
   assert.ok(SM.SKILLS[g.s], g.id + ': tema desconhecido ' + g.s);
+  assert.ok(SM.TIPS[g.id] && !/undefined|NaN/.test(SM.TIPS[g.id]), g.id + ': sem dica');
   for (let seed = 1; seed <= 400; seed++) {
     const q = SM.make(g.id, SM.mulberry32(seed * 7919 + g.id.length));
     total++;

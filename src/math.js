@@ -432,17 +432,76 @@
     return { p: 'De quantas maneiras ' + k + ' pessoas podem sortear um amigo-secreto sem que ninguém tire o próprio nome?', a: D, e: 'São os desarranjos: D(n) = (n ' + M + ' 1)·(D(n ' + M + ' 1) + D(n ' + M + ' 2)), com D(2) = 1 e D(3) = 2. D(' + k + ') = ' + D + '.' };
   });
 
+  // Dica de método ou fórmula para cada tipo de exercício.
+  const TIPS = {
+    soma1: 'Complete 10 primeiro: 7 + 5 = 7 + 3 + 2 = 12.',
+    sub1: 'Pense em quanto falta: de 6 até 14 faltam 8, então 14 ' + M + ' 6 = 8.',
+    falta1: 'O número que falta é o total menos a parte conhecida.',
+    dobro1: 'Dobro = n + n. Metade = dividir em duas partes iguais.',
+    seq1: 'Descubra a diferença entre dois vizinhos e some essa diferença ao último número.',
+    soma2: 'Some dezenas e unidades separadamente: 64 + 51 = (60 + 50) + (4 + 1).',
+    sub2: 'Subtraia por partes: 102 ' + M + ' 51 = 102 ' + M + ' 50 ' + M + ' 1.',
+    mult2: 'Use uma conta vizinha que você já sabe: 7 × 6 = 7 × 5 + 7.',
+    div2: 'Divisão é a multiplicação ao contrário: procure o número que, vezes o divisor, dá o dividendo.',
+    mult2b: 'Propriedade distributiva: 23 × 4 = 20 × 4 + 3 × 4.',
+    ret2: 'Área = base × altura. Perímetro = 2 × (base + altura).',
+    ordem3: 'Ordem: parênteses, potências, depois × e ÷, por último + e ' + M + '.',
+    neg3: 'Sinais iguais dão positivo; sinais diferentes dão negativo. E a ' + M + ' (' + M + 'b) = a + b.',
+    frac3: 'n/d de X = X ÷ d × n.',
+    perc3: 'p% de X = X × p ÷ 100. Atalho: 10% é dividir por 10.',
+    pot3: 'a' + sup('n') + ' é a multiplicado por ele mesmo n vezes.',
+    raiz3: '√N é o número que, elevado ao quadrado, dá N. Teste quadrados próximos.',
+    media3: 'Média = soma dos valores ÷ quantidade de valores.',
+    tri3: 'Área = base × altura ÷ 2. Os ângulos internos somam 180°.',
+    eq4: 'ax + b = c  →  x = (c ' + M + ' b) ÷ a.',
+    eq4b: 'Leve os termos com x para um lado e os números para o outro; depois divida.',
+    prop4: 'Regra de três: a/b = c/x  →  x = b × c ÷ a.',
+    mmc4: 'Fatore em primos. Vale sempre MDC × MMC = a × b.',
+    pit4: 'a' + sup(2) + ' + b' + sup(2) + ' = c' + sup(2) + ', em que c é a hipotenusa.',
+    sist4: 'Some as duas equações para eliminar y (ou subtraia para eliminar x).',
+    fsoma4: 'a/b + c/d = (ad + cb) / (bd). Depois simplifique.',
+    pvar4: 'Aumento de p%: multiplique por (1 + p/100). Desconto: por (1 ' + M + ' p/100).',
+    quad5: 'x = (' + M + 'b ± √Δ) / 2a, com Δ = b' + sup(2) + ' ' + M + ' 4ac. Atalho: soma das raízes = ' + M + 'b/a e produto = c/a.',
+    log5: 'log' + sub('b') + ' N = k significa b' + sup('k') + ' = N.',
+    pa5: 'a' + sub('n') + ' = a' + sub(1) + ' + (n ' + M + ' 1)·r.   S' + sub('n') + ' = n·(a' + sub(1) + ' + a' + sub('n') + ') / 2.',
+    pg5: 'a' + sub('n') + ' = a' + sub(1) + ' · q' + sup('n' + M + '1') + '.',
+    comb5: 'C(n, k) = n! / (k!·(n ' + M + ' k)!). Anagramas com letras repetidas: n! dividido pelo fatorial de cada repetição.',
+    fun5: 'Para f(k), troque x por k. Vértice: x' + sub('v') + ' = ' + M + 'b / 2a, e o valor mínimo é f(x' + sub('v') + ').',
+    trig5: 'sen 30° = 1/2, sen 45° = √2/2, sen 60° = √3/2. O cosseno segue a ordem inversa. tg = sen / cos.',
+    exp5: 'Escreva os dois lados na mesma base e iguale os expoentes.',
+    prob5: 'P = casos favoráveis ÷ casos possíveis. Dois dados têm 36 resultados.',
+    der6: '(x' + sup('n') + ')′ = n·x' + sup('n' + M + '1') + '. Derive termo a termo; constante vira 0.',
+    int6: '∫ x' + sup('n') + ' dx = x' + sup('n+1') + ' / (n + 1). Depois calcule F(b) ' + M + ' F(a).',
+    lim6: 'Deu 0/0? Fatore e simplifique. No infinito, com graus iguais, vale a razão dos coeficientes líderes.',
+    det6: 'det = ad ' + M + ' bc.',
+    mod6: 'Fermat: se p é primo e não divide a, então a' + sup('p' + M + '1') + ' ≡ 1 (mod p). Reduza o expoente módulo p ' + M + ' 1.',
+    cplx6: '|a + bi| = √(a' + sup(2) + ' + b' + sup(2) + ').   (a + bi)(c + di) = (ac ' + M + ' bd) + (ad + bc)i.',
+    pginf6: 'S = a' + sub(1) + ' / (1 ' + M + ' q), válido quando |q| &lt; 1.',
+    binom6: 'O termo com x' + sup('k') + ' em (x + a)' + sup('n') + ' é C(n, k)·x' + sup('k') + '·a' + sup('n' + M + 'k') + '.',
+    det7: 'Cofatores na 1ª linha: a(ei ' + M + ' fh) ' + M + ' b(di ' + M + ' fg) + c(dh ' + M + ' eg).',
+    cadeia7: '[u' + sup('n') + ']′ = n·u' + sup('n' + M + '1') + '·u′.',
+    prod7: '(u·v)′ = u′·v + u·v′.',
+    int7: 'Ache a primitiva F termo a termo e calcule F(b) ' + M + ' F(a).',
+    lim7: 'Quando u → 0: sen(u)/u → 1, (e' + sup('u') + ' ' + M + ' 1)/u → 1 e (1 ' + M + ' cos u)/u' + sup(2) + ' → 1/2.',
+    inv7: 'Procure um múltiplo de p somado a 1 que seja divisível por a: p + 1, 2p + 1, 3p + 1…',
+    phi7: 'φ(n) = n × ∏(1 ' + M + ' 1/p), sobre os primos p que dividem n.',
+    ult7: 'Se mdc(a, 100) = 1, então a' + sup(20) + ' ≡ 1 (mod 100). Reduza o expoente módulo 20.',
+    auto7: 'Os autovalores são as raízes de λ' + sup(2) + ' ' + M + ' (traço)·λ + det = 0.',
+    soma7: 'Σk' + sup(2) + ' = n(n + 1)(2n + 1) / 6.   Σk' + sup(3) + ' = [n(n + 1) / 2]' + sup(2) + '.',
+    conta7: 'Barras e estrelas: x' + sub(1) + ' + … + x' + sub('k') + ' = n tem C(n + k ' + M + ' 1, k ' + M + ' 1) soluções. Desarranjos: D(n) = (n ' + M + ' 1)·(D(n ' + M + ' 1) + D(n ' + M + ' 2)).'
+  };
+
   const BY_ID = {};
   G.forEach((g) => { BY_ID[g.id] = g; });
 
   function make(id, rng) {
     const g = BY_ID[id];
     const q = g.g(helpers(rng));
-    q.gen = id; q.L = g.L; q.s = g.s;
+    q.gen = id; q.L = g.L; q.s = g.s; q.t = g.t; q.h = TIPS[id];
     return q;
   }
 
-  const api = { G, BY_ID, LEVELS, SKILLS, mulberry32, make, gcd };
+  const api = { G, BY_ID, LEVELS, SKILLS, TIPS, mulberry32, make, gcd };
   root.SinapseMath = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);

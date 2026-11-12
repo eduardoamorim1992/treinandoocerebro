@@ -58,7 +58,7 @@
   function makeMath(id, rng) {
     rng = rng || Math.random;
     const m = SM.make(id, rng);
-    const q = { track: 'math', skill: m.s, skillName: SM.SKILLS[m.s], lv: m.L, qr: mathQR(m.L), p: m.p, x: m.x || '', eHtml: m.e, ref: 'm:' + id };
+    const q = { track: 'math', skill: m.s, skillName: SM.SKILLS[m.s], lv: m.L, qr: mathQR(m.L), p: m.p, x: m.x || '', eHtml: m.e, h: m.h, ref: 'm:' + id };
     if (m.o) return withOptions(q, m.o, rng);
     q.type = 'num'; q.a = m.a;
     return q;
@@ -110,7 +110,7 @@
 
   function start(o) {
     stopTimer();
-    ses = { mode: o.mode, track: o.track || 'math', level: o.level ? Number(o.level) : null, skill: o.skill || null, cat: o.cat || null, total: 10, i: 0, log: [], combo: 0, xp: 0, r0: { math: S.r.math, gk: S.r.gk }, q: null, fb: null, buf: '', used: new Set(), last: null, list: null, done: false, newAch: [] };
+    ses = { mode: o.mode, track: o.track || 'math', level: o.level ? Number(o.level) : null, skill: o.skill || null, cat: o.cat || null, gen: o.gen || null, total: 10, i: 0, log: [], combo: 0, xp: 0, r0: { math: S.r.math, gk: S.r.gk }, q: null, fb: null, buf: '', used: new Set(), last: null, list: null, done: false, newAch: [] };
     if (o.mode === 'diario') { ses.list = buildDaily(); ses.total = ses.list.length; }
     if (o.mode === 'revisao') {
       ses.list = S.review.slice(0, 10).map(fromRef).filter(Boolean); ses.total = ses.list.length;
@@ -141,6 +141,7 @@
     }
     const tr = ses.track === 'misto' ? (ses.i % 2 ? 'gk' : 'math') : ses.track;
     const target = S.r[tr] + (Math.random() * 500 - 250);
+    if (ses.gen) return makeMath(ses.gen);
     if (tr === 'math') {
       const L = ses.level || clamp(Math.round((target - 200) / 400) + 1, 1, 7);
       return pickMath(L, ses.skill, ses.last, false);
@@ -151,7 +152,7 @@
   function advance() {
     if (ses.i >= ses.total) return finish();
     ses.q = nextQuestion(); ses.last = ses.q.ref.slice(2);
-    ses.fb = null; ses.buf = ''; ses.t0 = Date.now();
+    ses.fb = null; ses.buf = ''; ses.hint = false; ses.t0 = Date.now();
     render();
   }
   function submit(val) {
@@ -253,7 +254,7 @@
 
   // ---------- telas ----------
   let confirmReset = false;
-  function view() { return location.hash === '#progresso' ? 'progresso' : 'treinar'; }
+  function view() { return location.hash === '#progresso' ? 'progresso' : location.hash === '#formulas' ? 'formulas' : 'treinar'; }
 
   function renderChips() {
     const st = streak();
@@ -279,27 +280,44 @@
     const pct = sk && sk.n ? Math.round(sk.ok / sk.n * 100) : 0;
     return '<div class="meter"><i style="width:' + pct + '%"></i></div>';
   }
+  const svg = (d) => '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + '</svg>';
+  const ICON = {
+    sprint: svg('<circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5v4l2.5 2M9.5 2.5h5M12 2.5V6"/>'),
+    diario: svg('<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 2.5v4M16 2.5v4M9 15l2.2 2.2L15.5 13"/>'),
+    revisao: svg('<path d="M4 12a8 8 0 0 1 13.7-5.6L20 8.5M20 4v4.5h-4.5M20 12a8 8 0 0 1-13.7 5.6L4 15.5M4 20v-4.5h4.5"/>'),
+    dica: svg('<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.6 10.8c.7.6 1.1 1.3 1.1 2.2h5c0-.9.4-1.6 1.1-2.2A6 6 0 0 0 12 3z"/>'),
+    seta: svg('<path d="M5 12h14M13 6l6 6-6 6"/>')
+  };
+  function trackRow(t) {
+    const r = S.r[t], b = band(r), pct = b === 6 ? 100 : Math.round((r - b * 400) / 4);
+    return '<div class="prow"><div class="prow-top"><span>' + TRACK[t] + '</span><b class="num">' + r + '</b></div>' + '<div class="meter"><i style="width:' + pct + '%"></i></div>' +
+      '<small>' + LV[b] + (b === 6 ? ' · nível máximo' : ' · faltam ' + ((b + 1) * 400 - r) + ' para ' + LV[b + 1]) + '</small></div>';
+  }
   function renderHome() {
     const first = S.total.n === 0;
     const dailyDone = S.daily && S.daily.date === dayKey();
-    const starts = [['zero', 'Do zero', 300], ['medio', 'Já sei o básico', 1000], ['alto', 'Avançado', 1800]];
-    let h = '<section class="hero"><div>' +
+    const starts = [['Do zero', 300], ['Já sei o básico', 1000], ['Avançado', 1800]];
+    let h = '<section class="hero"><div class="hero-copy">' +
       '<p class="eyebrow">Matemática e conhecimentos gerais</p>' +
-      '<h1>Do <em>7 + 5</em> aos <em>autovalores</em>.</h1>' +
-      '<p class="lead">Dez perguntas por sessão. Acertou, a próxima sobe; errou, o Sinapse volta um passo e mostra a resolução. São ' + SM.G.length + ' tipos de exercício gerados na hora e ' + BANK.length + ' perguntas de cultura geral.</p>' +
+      '<h1>Do <span class="mono">7 + 5</span> aos <em>autovalores</em>.</h1>' +
+      '<p class="lead">Dez perguntas por sessão, no seu nível. Acertou, a próxima sobe; errou, o Sinapse volta um passo e mostra a fórmula e a resolução.</p>' +
       '<div class="go"><div class="seg" role="group" aria-label="Trilha">' +
       ['misto', 'math', 'gk'].map((t) => '<button data-act="track" data-track="' + t + '" aria-pressed="' + (S.track === t) + '">' + TRACK[t] + '</button>').join('') +
-      '</div><button class="btn primary big" data-act="start" data-mode="treino" data-track="' + S.track + '">Começar treino</button></div>';
-    if (first) h += '<div class="startpick"><span>Ponto de partida:</span>' + starts.map((s) => '<button class="btn small" data-act="setstart" data-r="' + s[2] + '" aria-pressed="' + (S.r.math === s[2]) + '"' + (S.r.math === s[2] ? ' style="border-color:var(--ink)"' : '') + '>' + s[1] + '</button>').join('') + '</div>';
-    h += '</div>' + ruler() + '</section>';
+      '</div><button class="btn primary big" data-act="start" data-mode="treino" data-track="' + S.track + '">Começar treino' + ICON.seta + '</button></div>';
+    if (first) h += '<div class="startpick"><span>Ponto de partida</span>' + starts.map((s) => '<button class="pill" data-act="setstart" data-r="' + s[1] + '" aria-pressed="' + (S.r.math === s[1]) + '">' + s[0] + '</button>').join('') + '</div>';
+    h += '<ul class="facts"><li><b class="num">' + SM.G.length + '</b> tipos de exercício gerados na hora</li><li><b class="num">' + BANK.length + '</b> perguntas de cultura geral</li><li><b class="num">7</b> níveis, com dica em cada conta</li></ul></div>' +
+      '<aside class="panel" aria-label="Seu painel"><p class="eyebrow">Seu painel</p>' + trackRow('math') + trackRow('gk') +
+      '<div class="pstats"><div><b class="num">' + streak() + '</b><span>dias seguidos</span></div><div><b class="num">' + xpLevel() + '</b><span>nível de XP</span></div><div><b class="num">' + S.total.n + '</b><span>respostas</span></div></div></aside></section>';
+
+    h += '<section class="section">' + ruler() + '</section>';
 
     h += '<section class="section"><header><h2>Outros modos</h2></header><div class="modes">' +
-      '<button class="mode" data-act="start" data-mode="sprint"><h3>Sprint de 60 segundos</h3><p>Contas rápidas contra o relógio. Cada acerto vale um ponto.</p><span class="stat">Recorde: ' + S.best.sprint + '</span></button>' +
-      '<button class="mode" data-act="start" data-mode="diario"><h3>Desafio do dia</h3><p>As mesmas dez perguntas para todo mundo, da mais fácil à mais difícil.</p><span class="stat">' + (dailyDone ? 'Hoje: ' + S.daily.score + '/' + S.daily.total + ' · jogar de novo' : 'Ainda não feito hoje') + '</span></button>' +
-      '<button class="mode" data-act="start" data-mode="revisao"' + (S.review.length ? '' : ' disabled') + '><h3>Revisão de erros</h3><p>Refaz o que você errou. Acertou, sai da fila.</p><span class="stat">' + (S.review.length ? S.review.length + ' na fila' : 'Fila vazia') + '</span></button>' +
+      '<button class="mode" data-act="start" data-mode="sprint"><span class="ico">' + ICON.sprint + '</span><h3>Sprint de 60 segundos</h3><p>Contas rápidas contra o relógio. Cada acerto vale um ponto.</p><span class="stat">Recorde: ' + S.best.sprint + '</span></button>' +
+      '<button class="mode" data-act="start" data-mode="diario"><span class="ico">' + ICON.diario + '</span><h3>Desafio do dia</h3><p>As mesmas dez perguntas para todo mundo, da mais fácil à mais difícil.</p><span class="stat">' + (dailyDone ? 'Hoje: ' + S.daily.score + '/' + S.daily.total + ' · jogar de novo' : 'Ainda não feito hoje') + '</span></button>' +
+      '<button class="mode" data-act="start" data-mode="revisao"' + (S.review.length ? '' : ' disabled') + '><span class="ico">' + ICON.revisao + '</span><h3>Revisão de erros</h3><p>Refaz o que você errou. Acertou, sai da fila.</p><span class="stat">' + (S.review.length ? S.review.length + ' na fila' : 'Fila vazia') + '</span></button>' +
       '</div></section>';
 
-    h += '<section class="section"><header><h2>Os sete níveis</h2><p class="hint">Escolha um degrau para treinar só nele.</p></header><div class="ladder">';
+    h += '<section class="section"><header><h2>Os sete níveis</h2><p class="hint">Escolha um degrau para treinar só nele. As fórmulas de cada um estão em <a href="#formulas">Fórmulas</a>.</p></header><div class="ladder">';
     LV.forEach((name, i) => {
       const L = i + 1, topics = SM.G.filter((g) => g.L === L).map((g) => g.t);
       const hm = band(S.r.math) === i, hg = band(S.r.gk) === i;
@@ -312,22 +330,31 @@
     });
     h += '</div></section>';
 
-    h += '<section class="section"><header><h2>Treinar por tema</h2><p class="hint">A dificuldade se ajusta dentro do tema.</p></header><div class="themes">';
-    const card = (id, name, kind, attr) => {
+    const card = (id, name, attr) => {
       const sk = S.skills[id];
-      return '<button class="theme" data-act="start" data-mode="treino" ' + attr + '><span class="t"><b>' + name + '</b><span>' + kind + '</span></span>' + meter(sk) +
-        '<small>' + (sk ? sk.ok + ' de ' + sk.n + ' certas (' + Math.round(sk.ok / sk.n * 100) + '%)' : 'Ainda não treinado') + '</small></button>';
+      return '<button class="theme" data-act="start" data-mode="treino" ' + attr + '><span class="t"><b>' + name + '</b><span>' + (sk ? Math.round(sk.ok / sk.n * 100) + '%' : '–') + '</span></span>' + meter(sk) +
+        '<small>' + (sk ? sk.ok + ' de ' + sk.n + ' certas' : 'Ainda não treinado') + '</small></button>';
     };
-    Object.keys(SM.SKILLS).forEach((id) => { h += card(id, SM.SKILLS[id], 'mat', 'data-track="math" data-skill="' + id + '"'); });
-    Object.keys(CATS).forEach((id) => { h += card(id, CATS[id], 'geral', 'data-track="gk" data-cat="' + id + '"'); });
-    h += '</div></section>';
+    h += '<section class="section"><header><h2>Treinar por tema</h2><p class="hint">A dificuldade se ajusta dentro do tema.</p></header>' +
+      '<h3 class="subhead">Matemática</h3><div class="themes">' + Object.keys(SM.SKILLS).map((id) => card(id, SM.SKILLS[id], 'data-track="math" data-skill="' + id + '"')).join('') + '</div>' +
+      '<h3 class="subhead">Conhecimentos gerais</h3><div class="themes">' + Object.keys(CATS).map((id) => card(id, CATS[id], 'data-track="gk" data-cat="' + id + '"')).join('') + '</div></section>';
     return h;
+  }
+  function renderFormulas() {
+    let h = '<section class="section"><header><div><h2>Fórmulas e dicas</h2><p class="hint">Uma dica de método para cada um dos ' + SM.G.length + ' tipos de exercício. Durante o treino, aperte <kbd>D</kbd> ou “Ver dica” para ver a mesma fórmula.</p></div></header>';
+    LV.forEach((name, i) => {
+      h += '<h3 class="lvhead"><span class="n">' + (i + 1) + '</span>' + name + '</h3><div class="formulas">' +
+        SM.G.filter((g) => g.L === i + 1).map((g) => '<article class="formula"><header><b>' + g.t + '</b><small>' + SM.SKILLS[g.s] + '</small></header><p class="fx">' + SM.TIPS[g.id] + '</p>' +
+          '<div><button class="btn small" data-act="start" data-mode="treino" data-track="math" data-gen="' + g.id + '">Praticar</button></div></article>').join('') + '</div>';
+    });
+    return h + '</section>';
   }
 
   function modeName() {
     if (ses.mode === 'sprint') return 'Sprint de 60 segundos';
     if (ses.mode === 'diario') return 'Desafio do dia';
     if (ses.mode === 'revisao') return 'Revisão de erros';
+    if (ses.gen) return SM.BY_ID[ses.gen].t;
     if (ses.skill) return SM.SKILLS[ses.skill];
     if (ses.cat) return CATS[ses.cat];
     if (ses.level) return TRACK[ses.track] + ' · nível ' + ses.level;
@@ -361,12 +388,15 @@
         '<button data-act="key" data-k="-" aria-label="Trocar sinal">±</button><button data-act="key" data-k="back" aria-label="Apagar">⌫</button>' +
         '<button class="okk" data-act="key" data-k="enter">Responder</button></div></div>';
     }
+    if (!fb && q.h) h += ses.hint
+      ? '<div class="hintbox" role="note"><b>Dica</b><p>' + q.h + '</p></div>'
+      : '<div><button class="btn small" data-act="hint">' + ICON.dica + 'Ver dica <kbd>D</kbd></button></div>';
     if (fb) {
       const ans = q.type === 'num' ? fmt(q.a) : q.opts[q.ci];
       const mine = q.type === 'num' ? fmt(Number(ses.log[ses.log.length - 1].val)) : null;
       h += '<div class="fb ' + (fb.ok ? 'ok' : 'bad') + '" role="status"><strong>' + (fb.ok ? 'Certo' : 'Resposta: ' + esc(ans)) +
         '<small>' + (fb.ok ? '+' + fb.xp + ' XP' : mine !== null ? 'você respondeu ' + mine : '') + (ses.mode === 'treino' ? ' · régua ' + (fb.dr >= 0 ? '+' : '−') + Math.abs(fb.dr) : '') + (fb.ok && ses.combo >= 3 ? ' · ' + ses.combo + ' seguidas' : '') + '</small></strong>' +
-        '<p>' + q.eHtml + '</p></div><div class="fb-row"><button class="btn primary" id="next" data-act="next">' + (ses.i + 1 >= ses.total ? 'Ver resultado' : 'Próxima') + ' <span class="mono" aria-hidden="true">↵</span></button></div>';
+        '<p>' + q.eHtml + '</p>' + (q.h ? '<p class="fline"><b>Como fazer:</b> ' + q.h + '</p>' : '') + '</div><div class="fb-row"><button class="btn primary" id="next" data-act="next">' + (ses.i + 1 >= ses.total ? 'Ver resultado' : 'Próxima') + ' <span class="mono" aria-hidden="true">↵</span></button></div>';
     }
     h += '</div></div>';
     ses.flash = null;
@@ -445,8 +475,60 @@
     renderChips();
     const app = $('#app');
     if (ses) app.innerHTML = ses.done ? renderResult() : renderSession();
-    else app.innerHTML = view() === 'progresso' ? renderProgress() : renderHome();
+    else app.innerHTML = view() === 'progresso' ? renderProgress() : view() === 'formulas' ? renderFormulas() : renderHome();
   }
+
+  // ---------- bloco de anotações (texto ou à mão) ----------
+  const NK = 'sinapse.notas';
+  let N = { text: '', tab: 'texto', img: '' };
+  try { N = Object.assign(N, JSON.parse(localStorage.getItem(NK) || '{}')); } catch (e) { /* sem armazenamento */ }
+  function saveNotes() { try { localStorage.setItem(NK, JSON.stringify(N)); } catch (e) { /* desenho grande demais ou sem armazenamento */ } }
+  const nBox = $('#notes'), nFab = $('#notes-fab'), nText = $('#notes-text'), cv = $('#notes-canvas');
+  let tool = 'pen', drawing = false, lastPt = null;
+  function fitCanvas() {
+    const r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+    const w = Math.round(r.width * dpr), hgt = Math.round(r.height * dpr);
+    if (!w || (cv.width === w && cv.height === hgt)) return;
+    cv.width = w; cv.height = hgt;
+    if (N.img) { const im = new Image(); im.onload = () => cv.getContext('2d').drawImage(im, 0, 0, w, hgt); im.src = N.img; }
+  }
+  function renderNotes() {
+    const draw = N.tab === 'desenho';
+    nText.hidden = draw; cv.hidden = !draw; $('#notes-tools').hidden = !draw;
+    $('#notes-info').textContent = draw ? 'Use o dedo, a caneta ou o mouse.' : '';
+    nBox.querySelectorAll('[data-tab]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tab === N.tab)));
+    nBox.querySelectorAll('[data-tool]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tool === tool)));
+    if (draw) fitCanvas();
+  }
+  function toggleNotes(open) {
+    nBox.hidden = !open; nFab.hidden = open; nFab.setAttribute('aria-expanded', String(open));
+    if (open) { renderNotes(); if (N.tab === 'texto') nText.focus(); } else nFab.focus();
+  }
+  function notesAct(a, d) {
+    if (a === 'notes') return toggleNotes(true);
+    if (a === 'notes-close') return toggleNotes(false);
+    if (a === 'notes-tab') { N.tab = d.tab; saveNotes(); renderNotes(); if (N.tab === 'texto') nText.focus(); }
+    else if (a === 'notes-tool') { tool = d.tool; renderNotes(); }
+    else if (a === 'notes-clear') {
+      if (N.tab === 'texto') { N.text = ''; nText.value = ''; nText.focus(); }
+      else { cv.getContext('2d').clearRect(0, 0, cv.width, cv.height); N.img = ''; }
+      saveNotes(); toast(N.tab === 'texto' ? 'Texto apagado' : 'Desenho apagado');
+    }
+  }
+  const penPoint = (e) => { const r = cv.getBoundingClientRect(), k = cv.width / r.width; return { x: (e.clientX - r.left) * k, y: (e.clientY - r.top) * k }; };
+  function stroke(p, q) {
+    const c = cv.getContext('2d'), dpr = window.devicePixelRatio || 1;
+    c.globalCompositeOperation = tool === 'eraser' ? 'destination-out' : 'source-over';
+    c.strokeStyle = getComputedStyle(cv).color; c.lineWidth = (tool === 'eraser' ? 20 : 2.4) * dpr; c.lineCap = 'round'; c.lineJoin = 'round';
+    c.beginPath(); c.moveTo(p.x, p.y); c.lineTo(q.x, q.y); c.stroke();
+  }
+  cv.addEventListener('pointerdown', (e) => { e.preventDefault(); try { cv.setPointerCapture(e.pointerId); } catch (x) { /* ok */ } drawing = true; lastPt = penPoint(e); stroke(lastPt, lastPt); });
+  cv.addEventListener('pointermove', (e) => { if (!drawing) return; const p = penPoint(e); stroke(lastPt, p); lastPt = p; });
+  const penUp = () => { if (!drawing) return; drawing = false; try { N.img = cv.toDataURL('image/png'); } catch (x) { /* ok */ } saveNotes(); };
+  cv.addEventListener('pointerup', penUp); cv.addEventListener('pointercancel', penUp);
+  nText.value = N.text;
+  nText.addEventListener('input', () => { N.text = nText.value; saveNotes(); });
+  window.addEventListener('resize', () => { if (!nBox.hidden && N.tab === 'desenho') fitCanvas(); });
 
   // ---------- eventos ----------
   function key(k) {
@@ -461,14 +543,16 @@
     const el = ev.target.closest('[data-act]');
     if (!el) return;
     const a = el.dataset.act, d = el.dataset;
-    if (a === 'start') start({ mode: d.mode, track: d.track, level: d.level, skill: d.skill, cat: d.cat });
+    if (a.indexOf('notes') === 0) return notesAct(a, d);
+    if (a === 'start') start({ mode: d.mode, track: d.track, level: d.level, skill: d.skill, cat: d.cat, gen: d.gen });
     else if (a === 'track') { S.track = d.track; save(); render(); }
     else if (a === 'setstart') { S.r.math = S.r.gk = Number(d.r); save(); render(); }
     else if (a === 'opt') submit(Number(d.i));
     else if (a === 'key') key(d.k);
+    else if (a === 'hint') { ses.hint = true; render(); }
     else if (a === 'next') { ses.i++; advance(); }
     else if (a === 'quit') { if (ses.log.length && ses.mode !== 'revisao') finish(); else { stopTimer(); ses = null; render(); } }
-    else if (a === 'again') start({ mode: ses.mode, track: ses.track, level: ses.level, skill: ses.skill, cat: ses.cat });
+    else if (a === 'again') start({ mode: ses.mode, track: ses.track, level: ses.level, skill: ses.skill, cat: ses.cat, gen: ses.gen });
     else if (a === 'home') { ses = null; render(); window.scrollTo(0, 0); }
     else if (a === 'sound') { S.sound = !S.sound; save(); render(); }
     else if (a === 'reset-ask') { confirmReset = true; render(); }
@@ -480,9 +564,12 @@
     }
   });
   document.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Escape' && !nBox.hidden) { toggleNotes(false); return; }
+    if (ev.target.closest && ev.target.closest('textarea, input, .notes')) return;
     if (!ses || ses.done || ev.ctrlKey || ev.metaKey || ev.altKey) return;
     const k = ev.key;
     if (ses.fb) { if (k === 'Enter' || k === ' ') { ev.preventDefault(); ses.i++; advance(); } return; }
+    if ((k === 'd' || k === 'D') && ses.q.h && !ses.hint) { ev.preventDefault(); ses.hint = true; render(); return; }
     if (ses.q.type === 'mc') { if (k >= '1' && k <= '4') { ev.preventDefault(); submit(Number(k) - 1); } return; }
     if (k >= '0' && k <= '9') { ev.preventDefault(); key(k); }
     else if (k === '-') { ev.preventDefault(); key('-'); }

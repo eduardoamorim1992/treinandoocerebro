@@ -26,10 +26,21 @@ const fragment = [
   '<meta name="claude:viewport-fit-sides" content="cover">',
   '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap">',
   '<style>' + read('src/styles.css') + '</style>',
-  '<header class="wrap"><div class="top-in"><a class="logo" href="#treinar">Sinap<span>se</span></a>' +
-    '<nav class="tabs" aria-label="Seções"><a href="#treinar" data-tab="treinar">Treinar</a><a href="#progresso" data-tab="progresso">Progresso</a></nav>' +
+  '<header class="top"><div class="wrap top-in"><a class="logo" href="#treinar">Sinap<span>se</span></a>' +
+    '<nav class="tabs" aria-label="Seções"><a href="#treinar" data-tab="treinar">Treinar</a><a href="#formulas" data-tab="formulas">Fórmulas</a><a href="#progresso" data-tab="progresso">Progresso</a></nav>' +
     '<div class="chips" id="chips"></div></div></header>',
   '<main class="wrap" id="app"></main>',
+  '<footer class="wrap foot"><span>Sinapse</span><span>Seu progresso fica salvo neste navegador.</span></footer>',
+  '<button class="fab" id="notes-fab" data-act="notes" aria-expanded="false" aria-controls="notes">' +
+    '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 17v3zM14.5 7.5l3 3"/></svg>Anotações</button>',
+  '<aside class="notes" id="notes" aria-label="Bloco de anotações" hidden>' +
+    '<header><b>Anotações</b><div class="seg" role="group" aria-label="Modo">' +
+    '<button data-act="notes-tab" data-tab="texto">Digitar</button><button data-act="notes-tab" data-tab="desenho">Escrever</button></div>' +
+    '<button class="btn small" data-act="notes-close" aria-label="Fechar anotações">Fechar</button></header>' +
+    '<textarea id="notes-text" placeholder="Rascunhe contas, fórmulas ou lembretes. Fica salvo neste navegador." spellcheck="false"></textarea>' +
+    '<canvas id="notes-canvas" aria-label="Área para escrever à mão"></canvas>' +
+    '<footer><div class="seg" id="notes-tools" role="group" aria-label="Ferramenta"><button data-act="notes-tool" data-tool="pen">Caneta</button><button data-act="notes-tool" data-tool="eraser">Borracha</button></div>' +
+    '<span id="notes-info"></span><button class="btn small" data-act="notes-clear">Limpar</button></footer></aside>',
   '<script>window.SINAPSE_BANK=' + safe(JSON.stringify(bank)) + ';</script>',
   '<script>' + safe(read('src/math.js')) + '</script>',
   '<script>' + safe(read('src/app.js')) + '</script>'
