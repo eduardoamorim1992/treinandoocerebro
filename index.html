@@ -1,0 +1,1211 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
+<title>Sinapse</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap">
+<style>/* Conceito: caderno quadriculado + régua de medição. Uma régua de 0 a 2800 mostra onde você está;
+   o marca-texto amarelo é o único destaque forte, o resto fica em tinta azul-marinho sobre papel. */
+:root {
+  --paper: #F3F5FA;
+  --surface: #FFFFFF;
+  --ink: #131A33;
+  --ink-2: #4C5676;
+  --line: #D3D9E8;
+  --grid: rgba(19, 26, 51, 0.045);
+  --blue: #2443E0;
+  --on-blue: #FFFFFF;
+  --blue-soft: #E6EAFD;
+  --mark: #FFD23F;
+  --on-mark: #131A33;
+  --ok: #0F7A56;
+  --ok-bg: #DDF3EA;
+  --bad: #BF2F1D;
+  --bad-bg: #FBE4DF;
+  --f-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+  --r: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0D1225; --surface: #161C36; --ink: #EEF1FA; --ink-2: #A6AECB; --line: #2C3459;
+    --grid: rgba(238, 241, 250, 0.04); --blue: #93A5FF; --on-blue: #0D1225; --blue-soft: #1F2850;
+    --mark: #FFD23F; --on-mark: #131A33; --ok: #4FD6A6; --ok-bg: #123A30; --bad: #FF8E7A; --bad-bg: #44201C;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0D1225; --surface: #161C36; --ink: #EEF1FA; --ink-2: #A6AECB; --line: #2C3459;
+  --grid: rgba(238, 241, 250, 0.04); --blue: #93A5FF; --on-blue: #0D1225; --blue-soft: #1F2850;
+  --mark: #FFD23F; --on-mark: #131A33; --ok: #4FD6A6; --ok-bg: #123A30; --bad: #FF8E7A; --bad-bg: #44201C;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  margin: 0;
+  background-color: var(--paper);
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 24px 24px;
+  color: var(--ink);
+  font: 16px/1.5 var(--f-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 56px;
+}
+.wrap { max-width: 1040px; margin: 0 auto; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; line-height: 1.08; }
+p { margin: 0; }
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; }
+.num, .mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-2); }
+
+/* ---------- topo ---------- */
+.top-in { display: flex; align-items: center; gap: 8px 20px; flex-wrap: wrap; padding-block: 16px; border-bottom: 2px solid var(--ink); }
+.logo { font: 800 24px/1 var(--f-display); letter-spacing: -0.02em; color: var(--ink); text-decoration: none; }
+.logo span { background: var(--mark); color: var(--on-mark); padding: 0 5px; margin-left: 1px; }
+.tabs { display: flex; gap: 4px; }
+.tabs a { padding: 6px 12px; border-radius: var(--r); color: var(--ink-2); text-decoration: none; font-weight: 600; font-size: 15px; }
+.tabs a[aria-current="page"] { color: var(--ink); background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); }
+.chips { margin-left: auto; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.chip { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--surface); border-radius: 99px; padding: 4px 11px; font-size: 13px; font-weight: 600; white-space: nowrap; }
+.chip b { font-family: var(--f-mono); }
+button.chip:hover { border-color: var(--ink-2); }
+
+/* ---------- botões ---------- */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1.5px solid var(--ink); background: var(--surface); border-radius: var(--r); padding: 10px 16px; font-weight: 600; line-height: 1.2; transition: transform 0.08s ease; }
+.btn:hover { background: var(--blue-soft); }
+.btn:active { transform: translateY(1px); }
+.btn.primary { background: var(--blue); border-color: var(--blue); color: var(--on-blue); }
+.btn.primary:hover { filter: brightness(1.08); background: var(--blue); }
+.btn.big { padding: 14px 22px; font-size: 17px; }
+.btn.small { padding: 6px 11px; font-size: 13.5px; border-width: 1px; border-color: var(--line); }
+.btn.small:hover { border-color: var(--ink); }
+.btn.danger { border-color: var(--bad); color: var(--bad); }
+.seg { display: inline-flex; border: 1.5px solid var(--ink); border-radius: var(--r); overflow: hidden; background: var(--surface); flex-wrap: wrap; }
+.seg button { border: 0; background: none; padding: 9px 13px; font-weight: 600; font-size: 14.5px; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+
+/* ---------- início ---------- */
+.hero { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; padding-block: 36px 28px; }
+.hero h1 { font-size: clamp(36px, 7vw, 64px); font-weight: 800; letter-spacing: -0.03em; }
+.hero h1 em { font-style: normal; background: var(--mark); color: var(--on-mark); padding: 0 0.12em; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.hero .lead { max-width: 58ch; color: var(--ink-2); font-size: 17px; margin-top: 14px; }
+.go { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 22px; }
+.startpick { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 16px; font-size: 14px; color: var(--ink-2); }
+
+.ruler-box { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px 18px 14px; min-width: 0; }
+.ruler { position: relative; margin: 54px 0 48px; height: 30px; border: 1.5px solid var(--ink); border-radius: 3px;
+  background-image: repeating-linear-gradient(90deg, var(--ink) 0 1px, transparent 1px calc(100% / 28)), linear-gradient(var(--surface), var(--surface));
+  background-size: 100% 9px, 100% 100%; background-repeat: no-repeat; }
+.ruler .seg7 { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(7, 1fr); }
+.ruler .seg7 span { border-left: 1.5px solid var(--ink); font: 600 11px/1 var(--f-mono); color: var(--ink-2); padding: 14px 0 0 4px; }
+.ruler .seg7 span:first-child { border-left: 0; }
+.pin { position: absolute; left: var(--p); width: 0; }
+.pin::before { content: ""; position: absolute; left: -1.5px; width: 3px; height: 44px; background: var(--blue); }
+.pin.up::before { top: -13px; }
+.pin.down::before { bottom: -13px; }
+.pin.up { top: -8px; }
+.pin.down { bottom: -8px; }
+.pin i { position: absolute; left: 0; transform: translateX(calc(var(--p) * -1)); font-style: normal; white-space: nowrap; font-size: 12.5px; font-weight: 600; background: var(--blue); color: var(--on-blue); padding: 2px 8px; border-radius: 3px; }
+.pin.up i { bottom: 13px; }
+.pin.down i { top: 13px; }
+.pin.gk::before, .pin.gk i { background: var(--ink); color: var(--paper); }
+.ruler-legend { display: grid; grid-template-columns: repeat(7, 1fr); font-size: 11.5px; color: var(--ink-2); }
+.ruler-legend span { padding-left: 4px; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 720px) { .ruler-legend { display: none; } }
+
+.section { padding-block: 26px; display: grid; gap: 14px; }
+.section > header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.section h2 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; }
+.section .hint { color: var(--ink-2); font-size: 14.5px; }
+
+.modes { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
+.mode { text-align: left; display: grid; gap: 6px; align-content: start; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; }
+.mode:hover:not(:disabled) { border-color: var(--ink); }
+.mode:disabled { cursor: default; opacity: 0.6; }
+.mode h3 { font-size: 19px; font-weight: 700; }
+.mode p { color: var(--ink-2); font-size: 14.5px; }
+.mode .stat { font: 600 13px var(--f-mono); color: var(--ink); margin-top: 4px; }
+
+.ladder { border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); overflow: hidden; }
+.rung { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 4px 14px; align-items: center; padding: 12px 14px; border-top: 1px solid var(--line); }
+.rung:first-child { border-top: 0; }
+.rung .n { font: 800 26px/1 var(--f-display); color: var(--ink-2); }
+.rung.here .n { color: var(--on-mark); background: var(--mark); width: 36px; height: 36px; display: grid; place-items: center; border-radius: 3px; }
+.rung h3 { font-size: 17px; font-weight: 700; display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; }
+.rung h3 small { font: 500 12px var(--f-mono); color: var(--ink-2); }
+.rung .topics { color: var(--ink-2); font-size: 13.5px; }
+.rung .acts { display: flex; gap: 6px; flex-wrap: wrap; }
+.tag { font: 600 11px/1 var(--f-body); letter-spacing: 0.04em; text-transform: uppercase; border: 1px solid var(--ink); border-radius: 99px; padding: 3px 7px; }
+@media (max-width: 620px) { .rung { grid-template-columns: 44px minmax(0, 1fr); } .rung .acts { grid-column: 2; } }
+
+.themes { display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); gap: 10px; }
+.theme { text-align: left; display: grid; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 13px 14px; }
+.theme:hover { border-color: var(--ink); }
+.theme .t { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.theme .t b { font-weight: 600; }
+.theme .t span { font: 500 12px var(--f-mono); color: var(--ink-2); white-space: nowrap; }
+.meter { height: 6px; background: var(--blue-soft); border-radius: 3px; overflow: hidden; }
+.meter i { display: block; height: 100%; background: var(--blue); border-radius: 3px; }
+.theme small { color: var(--ink-2); font-size: 12.5px; }
+
+/* ---------- sessão ---------- */
+.ses { max-width: 720px; margin: 0 auto; padding-block: 24px; display: grid; gap: 16px; }
+.ses-head { display: flex; align-items: center; gap: 10px 14px; flex-wrap: wrap; }
+.ses-head .where { font-weight: 600; min-width: 0; }
+.ses-head .where small { display: block; color: var(--ink-2); font-weight: 500; font-size: 13px; }
+.ses-head .right { margin-left: auto; display: flex; gap: 10px; align-items: center; }
+.dots { display: flex; gap: 4px; flex-wrap: wrap; }
+.dots i { width: 18px; height: 6px; border-radius: 2px; background: var(--line); }
+.dots i.ok { background: var(--ok); }
+.dots i.bad { background: var(--bad); }
+.dots i.now { background: var(--ink); }
+.timebar { height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; }
+.timebar i { display: block; height: 100%; background: var(--mark); width: 100%; }
+.card { background: var(--surface); border: 1.5px solid var(--ink); border-radius: var(--r); padding: clamp(18px, 4vw, 30px); display: grid; gap: 20px; }
+.card.flash-ok { border-color: var(--ok); box-shadow: 0 0 0 3px var(--ok-bg); }
+.card.flash-bad { border-color: var(--bad); box-shadow: 0 0 0 3px var(--bad-bg); }
+.q-p { font-size: 18px; font-weight: 500; text-wrap: pretty; }
+.q-p.solo { font: 600 clamp(21px, 3.6vw, 27px)/1.25 var(--f-display); }
+.q-x { font: 600 clamp(26px, 6.2vw, 42px)/1.35 var(--f-mono); overflow-x: auto; padding-block: 4px; }
+.q-x sup, .q-x sub, .fb sup, .fb sub { font-size: 0.6em; }
+.mx { display: inline-grid; grid-template-columns: repeat(var(--n), auto); gap: 4px 18px; padding: 4px 12px; border-left: 2.5px solid currentColor; border-right: 2.5px solid currentColor; border-radius: 6px; text-align: right; vertical-align: middle; font-size: 0.8em; }
+.mx i { font-style: normal; }
+.int { display: inline-flex; align-items: center; font-size: 1.25em; }
+.int .lims { display: inline-flex; flex-direction: column; font-size: 0.42em; line-height: 1.3; margin-left: 2px; }
+.int .lims sup, .int .lims sub { font-size: 1em; position: static; }
+
+.opts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 560px) { .opts { grid-template-columns: minmax(0, 1fr); } }
+.opt { display: flex; gap: 12px; align-items: center; text-align: left; border: 1.5px solid var(--line); background: var(--surface); border-radius: var(--r); padding: 13px 14px; font-weight: 500; min-width: 0; overflow-wrap: anywhere; }
+.opt kbd { font: 600 12px var(--f-mono); border: 1px solid var(--line); border-radius: 4px; padding: 2px 6px; color: var(--ink-2); flex: none; }
+.opt:hover:not(:disabled) { border-color: var(--ink); }
+.opt:disabled { cursor: default; }
+.opt.right { border-color: var(--ok); background: var(--ok-bg); }
+.opt.wrong { border-color: var(--bad); background: var(--bad-bg); }
+.opt.mathopt { font-family: var(--f-mono); font-size: 18px; }
+
+.entry { display: grid; gap: 12px; justify-items: start; }
+.display { min-width: 180px; min-height: 58px; border: 1.5px solid var(--ink); border-radius: var(--r); padding: 8px 14px; font: 600 32px/1.25 var(--f-mono); background: var(--paper); display: flex; align-items: center; }
+.display.empty { color: var(--ink-2); font-weight: 400; font-size: 16px; }
+.display .caret { width: 2px; height: 30px; background: var(--blue); margin-left: 3px; animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.keypad { display: grid; grid-template-columns: repeat(6, minmax(0, 52px)); gap: 6px; }
+.keypad button { border: 1px solid var(--line); background: var(--surface); border-radius: var(--r); height: 46px; font: 600 18px var(--f-mono); }
+.keypad button:hover { border-color: var(--ink); }
+.keypad .okk { grid-column: span 2; background: var(--blue); color: var(--on-blue); border-color: var(--blue); font-family: var(--f-body); font-size: 15px; }
+
+.fb { border-radius: var(--r); padding: 14px 16px; display: grid; gap: 6px; }
+.fb.ok { background: var(--ok-bg); }
+.fb.bad { background: var(--bad-bg); }
+.fb strong { font: 700 18px var(--f-display); display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.fb.ok strong { color: var(--ok); }
+.fb.bad strong { color: var(--bad); }
+.fb strong small { font: 600 12.5px var(--f-mono); color: var(--ink); }
+.fb p { font-size: 15.5px; }
+.fb-row { display: flex; justify-content: flex-end; }
+
+/* ---------- resultado ---------- */
+.result h1 { font-size: clamp(34px, 6vw, 52px); font-weight: 800; letter-spacing: -0.03em; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 14px; display: grid; gap: 2px; }
+.tile span { font-size: 12.5px; color: var(--ink-2); font-weight: 600; }
+.tile b { font: 700 26px/1.2 var(--f-mono); }
+.tile small { font-size: 12.5px; color: var(--ink-2); }
+.up { color: var(--ok); } .down { color: var(--bad); }
+.review { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); }
+.review li { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 4px 10px; padding: 10px 14px; border-top: 1px solid var(--line); font-size: 14.5px; }
+.review li:first-child { border-top: 0; }
+.review .ic { font: 700 15px var(--f-mono); }
+.review .ic.ok { color: var(--ok); } .review .ic.bad { color: var(--bad); }
+.review .qx { font-family: var(--f-mono); }
+.review small { color: var(--ink-2); grid-column: 2; }
+.newach { background: var(--mark); color: var(--on-mark); border-radius: var(--r); padding: 12px 16px; font-weight: 600; }
+.rowbtns { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* ---------- progresso ---------- */
+.charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+.chart { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 16px; display: grid; gap: 8px; min-width: 0; }
+.chart h3 { font-size: 16px; font-weight: 700; display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.chart h3 span { font: 600 13px var(--f-mono); color: var(--ink-2); }
+.chart svg { width: 100%; height: auto; display: block; overflow: visible; }
+.chart .empty { color: var(--ink-2); font-size: 14px; padding-block: 22px; }
+.chart .axis { display: flex; justify-content: space-between; font: 500 11.5px var(--f-mono); color: var(--ink-2); }
+.bars { display: grid; grid-template-columns: repeat(14, 1fr); gap: 2px; align-items: end; height: 84px; border-bottom: 1px solid var(--line); }
+.bars i { background: var(--blue); border-radius: 4px 4px 0 0; min-height: 0; position: relative; }
+.bars i.zero { background: var(--line); height: 2px !important; border-radius: 0; }
+.bars i:hover::after { content: attr(data-tip); position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--paper); font: 500 11.5px var(--f-mono); padding: 3px 7px; border-radius: 4px; white-space: nowrap; z-index: 2; }
+.skills { display: grid; gap: 0; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); }
+.skill { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(60px, 1fr) 96px; gap: 12px; align-items: center; padding: 9px 14px; border-top: 1px solid var(--line); font-size: 14.5px; }
+.skill:first-child { border-top: 0; }
+.skill span:last-child { font: 500 12.5px var(--f-mono); color: var(--ink-2); text-align: right; }
+.achs { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+.ach { border: 1px dashed var(--line); border-radius: var(--r); padding: 11px 13px; display: grid; gap: 2px; color: var(--ink-2); }
+.ach b { font-weight: 600; }
+.ach small { font-size: 12.5px; }
+.ach.got { border: 1.5px solid var(--ink); background: var(--surface); color: var(--ink); }
+.ach.got b::before { content: "✓ "; color: var(--ok); }
+.resetbox { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; color: var(--ink-2); font-size: 14px; }
+.toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--paper); padding: 9px 15px; border-radius: var(--r); font-weight: 600; font-size: 14px; z-index: 20; }
+
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+<header class="wrap"><div class="top-in"><a class="logo" href="#treinar">Sinap<span>se</span></a><nav class="tabs" aria-label="Seções"><a href="#treinar" data-tab="treinar">Treinar</a><a href="#progresso" data-tab="progresso">Progresso</a></nav><div class="chips" id="chips"></div></div></header>
+<main class="wrap" id="app"></main>
+<script>window.SINAPSE_BANK=[{"id":"todtie","c":"ciencias","d":1,"q":"Qual planeta é conhecido como Planeta Vermelho?","o":["Marte","Vênus","Júpiter","Saturno"],"e":"A cor avermelhada de Marte vem do óxido de ferro, a mesma substância da ferrugem, que cobre seu solo."},{"id":"1ynksw2","c":"ciencias","d":1,"q":"Qual órgão bombeia o sangue para todo o corpo?","o":["Coração","Pulmão","Fígado","Estômago"],"e":"O coração é um músculo que se contrai sem parar, empurrando o sangue pelas artérias e veias."},{"id":"101cmpy","c":"ciencias","d":1,"q":"Qual gás do ar precisamos respirar para viver?","o":["Oxigênio","Hélio","Neônio","Argônio"],"e":"Nossas células usam o oxigênio para retirar energia dos alimentos; ele forma cerca de um quinto do ar."},{"id":"1o526o3","c":"ciencias","d":1,"q":"Em que a água líquida se transforma quando congela?","o":["Gelo","Vapor","Névoa","Orvalho"],"e":"Ao nível do mar, a água pura passa do estado líquido para o sólido a 0 °C, formando gelo."},{"id":"6xovs2","c":"ciencias","d":1,"q":"Qual é a estrela mais próxima da Terra?","o":["Sol","Sirius","Vega","Polaris"],"e":"O Sol é uma estrela. Sua luz leva cerca de 8 minutos para chegar à Terra."},{"id":"1lls4dq","c":"ciencias","d":1,"q":"Quantas patas tem uma aranha?","o":["Oito","Seis","Dez","Quatro"],"e":"Aranhas são aracnídeos e têm oito patas. Os insetos, como as formigas, têm seis."},{"id":"l8amdh","c":"ciencias","d":1,"q":"Que parte da planta costuma ficar debaixo da terra e absorve água?","o":["Raiz","Folha","Flor","Fruto"],"e":"A raiz fixa a planta no solo e retira dele a água e os sais minerais."},{"id":"12h9n5c","c":"ciencias","d":1,"q":"Que força puxa os objetos em direção ao chão?","o":["Gravidade","Magnetismo","Atrito","Empuxo"],"e":"A gravidade é a atração entre corpos com massa. A Terra, por ser muito massiva, puxa tudo para o seu centro."},{"id":"1s0puf4","c":"ciencias","d":1,"q":"Qual destes animais é um mamífero?","o":["Golfinho","Tubarão","Pinguim","Jacaré"],"e":"O golfinho respira ar pelos pulmões e amamenta os filhotes. Tubarão é peixe, pinguim é ave e jacaré é réptil."},{"id":"u2chjm","c":"ciencias","d":1,"q":"Qual conjunto de ossos protege o cérebro?","o":["Crânio","Costelas","Bacia","Coluna"],"e":"O crânio funciona como um capacete natural. As costelas protegem o coração e os pulmões."},{"id":"tyekff","c":"ciencias","d":2,"q":"Qual é a fórmula química da água?","o":["H2O","CO2","O2","NaCl"],"e":"Cada molécula de água tem dois átomos de hidrogênio ligados a um átomo de oxigênio."},{"id":"fxz1lm","c":"ciencias","d":2,"q":"Como se chama o processo em que as plantas produzem alimento usando a luz?","o":["Fotossíntese","Fermentação","Transpiração","Germinação"],"e":"Na fotossíntese, a planta usa luz, água e gás carbônico para produzir glicose e liberar oxigênio."},{"id":"6bt59y","c":"ciencias","d":2,"q":"Qual é o maior planeta do Sistema Solar?","o":["Júpiter","Saturno","Netuno","Urano"],"e":"Júpiter é um gigante gasoso com massa maior que a de todos os outros planetas do Sistema Solar somados."},{"id":"var5e4","c":"ciencias","d":2,"q":"Quais células do sangue transportam oxigênio?","o":["Hemácias","Leucócitos","Plaquetas","Linfócitos"],"e":"As hemácias contêm hemoglobina, proteína com ferro que se liga ao oxigênio e dá a cor vermelha ao sangue."},{"id":"dm9bu6","c":"ciencias","d":2,"q":"A que temperatura a água pura ferve ao nível do mar?","o":["100 °C","90 °C","80 °C","120 °C"],"e":"Em altitudes elevadas a pressão do ar é menor e a água ferve abaixo de 100 °C."},{"id":"14uraca","c":"ciencias","d":2,"q":"Qual é o gás mais abundante na atmosfera da Terra?","o":["Nitrogênio","Oxigênio","Gás carbônico","Argônio"],"e":"O nitrogênio compõe cerca de 78% do ar; o oxigênio, cerca de 21%."},{"id":"4ngur7","c":"ciencias","d":2,"q":"Qual movimento da Terra é responsável pela sucessão dos dias e das noites?","o":["Rotação","Translação","Precessão","Nutação"],"e":"A Terra gira em torno do próprio eixo em cerca de 24 horas. A translação, ao redor do Sol, dura um ano."},{"id":"bvzzxm","c":"ciencias","d":2,"q":"Como são chamados os animais que se alimentam apenas de plantas?","o":["Herbívoros","Carnívoros","Onívoros","Detritívoros"],"e":"Herbívoros, como bois e coelhos, são consumidores primários nas cadeias alimentares."},{"id":"uz375p","c":"ciencias","d":2,"q":"Como se chama a passagem de uma substância do estado líquido para o gasoso?","o":["Vaporização","Condensação","Solidificação","Fusão"],"e":"A vaporização pode ser lenta (evaporação) ou rápida, com bolhas (ebulição). O inverso é a condensação."},{"id":"uaccb6","c":"ciencias","d":2,"q":"Em qual órgão ocorre a maior parte da absorção dos nutrientes?","o":["Intestino delgado","Intestino grosso","Estômago","Esôfago"],"e":"As vilosidades do intestino delgado aumentam muito a área de absorção. O intestino grosso absorve sobretudo água."},{"id":"qjzvn5","c":"ciencias","d":3,"q":"Qual organela é a principal responsável pela respiração celular aeróbica?","o":["Mitocôndria","Ribossomo","Lisossomo","Centríolo"],"e":"Na mitocôndria ocorre a maior parte da produção de ATP. Ela possui DNA próprio e dupla membrana."},{"id":"wb78m0","c":"ciencias","d":3,"q":"O número atômico de um elemento corresponde ao seu número de quê?","o":["Prótons","Nêutrons","Núcleons","Isótopos"],"e":"O número de prótons define o elemento. Átomos com mesmos prótons e nêutrons diferentes são isótopos."},{"id":"llyril","c":"ciencias","d":3,"q":"Qual é a unidade de força no Sistema Internacional?","o":["Newton","Joule","Watt","Pascal"],"e":"Um newton é a força que dá a 1 kg a aceleração de 1 m/s². Joule mede energia, watt potência e pascal pressão."},{"id":"vuwt4z","c":"ciencias","d":3,"q":"Qual é o pH de uma solução aquosa neutra a 25 °C?","o":["7","0","1","14"],"e":"A escala de pH é logarítmica: abaixo de 7 a solução é ácida e acima de 7 é básica."},{"id":"c0qf9z","c":"ciencias","d":3,"q":"No RNA, qual base nitrogenada ocupa o lugar da timina do DNA?","o":["Uracila","Citosina","Guanina","Adenina"],"e":"No RNA a adenina pareia com a uracila. O RNA também difere do DNA por ter ribose em vez de desoxirribose."},{"id":"191ziv5","c":"ciencias","d":3,"q":"O ano-luz é uma unidade usada para medir o quê?","o":["Distância","Tempo","Velocidade","Luminosidade"],"e":"É a distância que a luz percorre no vácuo em um ano: cerca de 9,46 trilhões de quilômetros."},{"id":"oxhiso","c":"ciencias","d":3,"q":"Que tipo de ligação química se forma pelo compartilhamento de pares de elétrons?","o":["Covalente","Iônica","Metálica","Dipolo-dipolo"],"e":"Na ligação covalente os átomos compartilham elétrons; na iônica há transferência e atração entre íons."},{"id":"1ybsjkn","c":"ciencias","d":3,"q":"Qual é o valor aproximado da velocidade da luz no vácuo?","o":["300.000 km/s","150.000 km/s","30.000 km/s","3.000.000 km/s"],"e":"O valor exato é 299.792.458 m/s, e é a partir dele que o metro é definido."},{"id":"1dsdmzb","c":"ciencias","d":3,"q":"Qual hormônio reduz a concentração de glicose no sangue?","o":["Insulina","Glucagon","Adrenalina","Cortisol"],"e":"A insulina, produzida pelas células beta do pâncreas, faz as células captarem glicose. O glucagon tem efeito oposto."},{"id":"1odnuih","c":"ciencias","d":3,"q":"Com qual planta Gregor Mendel fez os experimentos que fundaram a genética?","o":["Ervilha","Milho","Feijão","Trigo"],"e":"Mendel cruzou ervilhas com características bem distintas, como cor e textura da semente, e deduziu as leis da herança."},{"id":"oy9o7d","c":"ciencias","d":4,"q":"Qual partícula é a mediadora da interação eletromagnética?","o":["Fóton","Glúon","Bóson Z","Píon"],"e":"O fóton não tem massa, por isso o alcance eletromagnético é infinito. O glúon medeia a força forte."},{"id":"6uywze","c":"ciencias","d":4,"q":"Em qual compartimento da célula eucariótica ocorre o ciclo de Krebs?","o":["Matriz mitocondrial","Citosol","Estroma do cloroplasto","Lúmen do retículo"],"e":"A glicólise ocorre no citosol; o piruvato entra na mitocôndria e o ciclo de Krebs acontece na matriz."},{"id":"q92mxp","c":"ciencias","d":4,"q":"Em qual planeta um dia sideral dura mais do que um ano do próprio planeta?","o":["Vênus","Mercúrio","Marte","Urano"],"e":"Vênus leva cerca de 243 dias terrestres para girar sobre si e cerca de 225 para orbitar o Sol, e gira em sentido retrógrado."},{"id":"ewt2jg","c":"ciencias","d":4,"q":"Qual é o elemento mais eletronegativo da tabela periódica?","o":["Flúor","Oxigênio","Cloro","Nitrogênio"],"e":"Na escala de Pauling o flúor tem o valor máximo, 3,98. A eletronegatividade cresce para cima e para a direita."},{"id":"vc4w24","c":"ciencias","d":4,"q":"Que princípio afirma que dois férmions idênticos não podem ocupar o mesmo estado quântico?","o":["Exclusão de Pauli","Incerteza de Heisenberg","Correspondência de Bohr","Equivalência de Einstein"],"e":"O princípio de Pauli explica a estrutura das camadas eletrônicas e, portanto, a tabela periódica."},{"id":"jc32qd","c":"ciencias","d":4,"q":"Qual enzima sintetiza DNA usando uma molécula de RNA como molde?","o":["Transcriptase reversa","RNA polimerase II","DNA ligase","Topoisomerase"],"e":"Retrovírus como o HIV usam a transcriptase reversa para copiar seu genoma de RNA em DNA."},{"id":"162qc69","c":"ciencias","d":4,"q":"Como se chama o limite de massa acima do qual uma anã branca não se sustenta?","o":["Limite de Chandrasekhar","Limite de Roche","Limite de Eddington","Limite de Hayashi"],"e":"Vale cerca de 1,4 massa solar. Acima dele, a pressão de degenerescência dos elétrons não vence a gravidade."},{"id":"nz9dqh","c":"ciencias","d":4,"q":"O nervo vago corresponde a qual par de nervos cranianos?","o":["Décimo","Sétimo","Quinto","Nono"],"e":"O vago (X par) leva fibras parassimpáticas ao coração, pulmões e trato digestivo. O VII é o facial e o V, o trigêmeo."},{"id":"b0g9bd","c":"ciencias","d":4,"q":"Qual é a geometria molecular do metano (CH4)?","o":["Tetraédrica","Piramidal","Trigonal plana","Quadrada plana"],"e":"Os quatro pares ligantes se afastam ao máximo, formando ângulos de 109,5°, típicos da hibridização sp3."},{"id":"22kw56","c":"ciencias","d":4,"q":"Que lei relaciona a velocidade de afastamento das galáxias com a distância até elas?","o":["Lei de Hubble-Lemaître","Lei de Stefan-Boltzmann","Lei de Titius-Bode","Lei de Tully-Fisher"],"e":"Quanto mais distante a galáxia, mais rápido ela se afasta: evidência observacional da expansão do Universo."},{"id":"9w289e","c":"ciencias","d":5,"q":"Qual é o único dos 20 aminoácidos proteicos padrão que não possui carbono quiral?","o":["Glicina","Alanina","Serina","Prolina"],"e":"Na glicina a cadeia lateral é apenas um hidrogênio, então o carbono alfa tem dois ligantes iguais e não é quiral."},{"id":"poxgv0","c":"ciencias","d":5,"q":"Qual é o spin do bóson de Higgs?","o":["0","1/2","1","2"],"e":"O Higgs é a única partícula elementar escalar do Modelo Padrão. Fóton, glúon, W e Z têm spin 1."},{"id":"zdzvet","c":"ciencias","d":5,"q":"Em qual subfase da prófase I da meiose ocorre o crossing-over?","o":["Paquíteno","Leptóteno","Zigóteno","Diplóteno"],"e":"No zigóteno os homólogos se pareiam; no paquíteno há a permuta; no diplóteno os quiasmas ficam visíveis."},{"id":"8iuy4x","c":"ciencias","d":5,"q":"Qual é o valor aproximado da constante de estrutura fina?","o":["1/137","1/1836","1/273","1/42"],"e":"Adimensional, ela mede a intensidade da interação eletromagnética. Já 1836 é a razão entre massas do próton e do elétron."},{"id":"g157rk","c":"ciencias","d":5,"q":"Qual é a configuração eletrônica do cromo (Z = 24) no estado fundamental?","o":["[Ar] 3d5 4s1","[Ar] 3d4 4s2","[Ar] 3d6 4s0","[Ar] 3d3 4s2 4p1"],"e":"O cromo foge da ordem prevista pelo diagrama de Pauling: a configuração com subnível d semipreenchido é mais estável."},{"id":"1xh50xc","c":"ciencias","d":5,"q":"Qual é a classificação espectral do Sol?","o":["G2V","K2V","F5V","G8III"],"e":"G2 indica temperatura superficial próxima de 5.800 K e V indica estrela da sequência principal (anã)."},{"id":"pjaerq","c":"ciencias","d":5,"q":"Por qual abertura do crânio passa o nervo maxilar (V2)?","o":["Forame redondo","Forame oval","Forame espinhoso","Forame jugular"],"e":"Os ramos do trigêmeo saem por: fissura orbital superior (V1), forame redondo (V2) e forame oval (V3)."},{"id":"1gd50rv","c":"ciencias","d":5,"q":"Qual é a temperatura do ponto triplo da água?","o":["273,16 K","273,15 K","272,16 K","277,13 K"],"e":"No ponto triplo coexistem gelo, líquido e vapor, a 0,01 °C. Já 273,15 K corresponde a 0 °C."},{"id":"4vaigq","c":"ciencias","d":5,"q":"Qual processo de fusão domina a produção de energia em estrelas da sequência principal bem mais massivas que o Sol?","o":["Ciclo CNO","Cadeia próton-próton","Processo triplo-alfa","Captura lenta de nêutrons"],"e":"O ciclo CNO usa carbono, nitrogênio e oxigênio como catalisadores e depende muito mais da temperatura que a cadeia pp."},{"id":"1uun8ag","c":"ciencias","d":5,"q":"Como se chama o desdobramento de linhas espectrais causado por um campo magnético externo?","o":["Efeito Zeeman","Efeito Stark","Efeito Raman","Efeito Compton"],"e":"O efeito Stark é o análogo para campos elétricos. O Zeeman permite medir campos magnéticos em manchas solares."},{"id":"1v2798j","c":"tecnologia","d":1,"q":"Qual peça do computador usamos para digitar letras e números?","o":["Teclado","Monitor","Mouse","Alto-falante"],"e":"O teclado é um dispositivo de entrada: cada tecla envia um sinal que o computador transforma em caractere."},{"id":"l2lvlr","c":"tecnologia","d":1,"q":"Como se chama a rede mundial que liga computadores do planeta inteiro?","o":["Internet","Intranet","Bluetooth","Ethernet"],"e":"A internet é uma rede de redes. Intranet é uma rede interna, restrita a uma organização."},{"id":"nd2ls","c":"tecnologia","d":1,"q":"Qual inventor brasileiro voou com o avião 14-Bis em Paris, em 1906?","o":["Santos Dumont","Oswaldo Cruz","Vital Brazil","Carlos Chagas"],"e":"Alberto Santos Dumont voou com o 14-Bis no campo de Bagatelle diante do público e de juízes oficiais."},{"id":"y05ak8","c":"tecnologia","d":1,"q":"Qual máquina voadora tem grandes pás girando em cima e pode ficar parada no ar?","o":["Helicóptero","Planador","Avião a jato","Dirigível"],"e":"O rotor do helicóptero gera sustentação mesmo sem o aparelho avançar, o que permite pairar e subir na vertical."},{"id":"ym76vk","c":"tecnologia","d":1,"q":"De onde vem a energia aproveitada pelos painéis solares?","o":["Da luz do Sol","Do vento","Da água dos rios","Do calor do solo"],"e":"As células fotovoltaicas transformam a luz solar diretamente em eletricidade."},{"id":"tnyky9","c":"tecnologia","d":1,"q":"Qual instrumento serve para observar objetos muito distantes, como planetas?","o":["Telescópio","Microscópio","Periscópio","Estetoscópio"],"e":"O telescópio coleta muita luz e amplia a imagem de objetos distantes. O microscópio amplia coisas minúsculas e próximas."},{"id":"okt6u9","c":"tecnologia","d":1,"q":"Qual destes veículos anda sobre trilhos?","o":["Trem","Ônibus","Caminhão","Balsa"],"e":"As rodas de aço sobre trilhos de aço têm pouco atrito, o que permite ao trem puxar cargas muito pesadas."},{"id":"1ih5780","c":"tecnologia","d":1,"q":"Qual símbolo aparece em todo endereço de e-mail?","o":["@ (arroba)","# (cerquilha)","& (e comercial)","% (porcentagem)"],"e":"A arroba separa o nome do usuário do nome do servidor de e-mail, como em nome@exemplo.com."},{"id":"apha0o","c":"tecnologia","d":1,"q":"O que colocamos em um controle remoto para ele ter energia e funcionar?","o":["Pilhas","Ímãs","Antenas","Lâmpadas"],"e":"As pilhas guardam energia química e a transformam em energia elétrica quando o aparelho é usado."},{"id":"1k05zr7","c":"tecnologia","d":1,"q":"Qual instrumento tem uma agulha que aponta para o norte?","o":["Bússola","Termômetro","Balança","Ampulheta"],"e":"A agulha da bússola é um ímã que se alinha com o campo magnético da Terra."},{"id":"9v824k","c":"tecnologia","d":2,"q":"O que significa a sigla CPU?","o":["Unidade Central de Processamento","Unidade de Controle de Periféricos","Central de Programas do Usuário","Circuito Principal de Utilidades"],"e":"A CPU (Central Processing Unit) executa as instruções dos programas; é o processador do computador."},{"id":"1ne7trf","c":"tecnologia","d":2,"q":"Quem recebeu a patente do telefone nos Estados Unidos em 1876?","o":["Alexander Graham Bell","Thomas Edison","Nikola Tesla","Guglielmo Marconi"],"e":"Bell registrou a patente em 1876. Marconi ficou conhecido pela telegrafia sem fio."},{"id":"1vo52z5","c":"tecnologia","d":2,"q":"Qual sistema numérico, formado só por 0 e 1, é a base dos computadores?","o":["Binário","Decimal","Octal","Hexadecimal"],"e":"Os circuitos têm dois estados (ligado e desligado), representados naturalmente pelos dígitos 0 e 1."},{"id":"2r7hyo","c":"tecnologia","d":2,"q":"Quem desenvolveu a prensa de tipos móveis na Europa do século XV?","o":["Johannes Gutenberg","Leonardo da Vinci","Galileu Galilei","Nicolau Copérnico"],"e":"A prensa de Gutenberg barateou a produção de livros e acelerou a circulação de ideias na Europa."},{"id":"16srvrt","c":"tecnologia","d":2,"q":"Quantos bits formam um byte?","o":["Oito","Quatro","Dez","Dezesseis"],"e":"Com 8 bits é possível representar 256 valores diferentes, de 0 a 255."},{"id":"1kovu9v","c":"tecnologia","d":2,"q":"Qual empresa criou o sistema operacional Windows?","o":["Microsoft","Apple","IBM","Google"],"e":"A Microsoft lançou o Windows em 1985 como interface gráfica para o MS-DOS."},{"id":"7hs5qe","c":"tecnologia","d":2,"q":"Qual máquina impulsionou as fábricas e os trens na Primeira Revolução Industrial?","o":["Máquina a vapor","Motor elétrico","Motor a diesel","Turbina a gás"],"e":"Aperfeiçoada por James Watt no século XVIII, a máquina a vapor transforma o calor da queima do carvão em movimento."},{"id":"9cv1sj","c":"tecnologia","d":2,"q":"Que tipo de programa é usado para abrir e visitar páginas da web?","o":["Navegador","Antivírus","Compilador","Planilha"],"e":"O navegador pede as páginas a servidores e interpreta o código HTML, CSS e JavaScript para exibi-las."},{"id":"d8ctuh","c":"tecnologia","d":2,"q":"O GPS calcula a posição do aparelho usando sinais vindos de onde?","o":["Satélites","Torres de rádio","Cabos submarinos","Radares em solo"],"e":"O receptor mede o tempo de chegada dos sinais de vários satélites e, com isso, calcula sua posição."},{"id":"qgmkq0","c":"tecnologia","d":2,"q":"Qual elemento químico é a principal matéria-prima dos chips de computador?","o":["Silício","Cobre","Alumínio","Chumbo"],"e":"O silício é um semicondutor: sua condutividade pode ser controlada, o que permite fabricar transistores."},{"id":"15ljq5t","c":"tecnologia","d":3,"q":"O que significa a sigla HTML?","o":["HyperText Markup Language","HyperText Machine Language","HighText Markup Language","HyperTransfer Markup Language"],"e":"HTML é uma linguagem de marcação, não de programação: descreve a estrutura das páginas com etiquetas (tags)."},{"id":"oxcb7e","c":"tecnologia","d":3,"q":"Quem criou a World Wide Web no CERN, por volta de 1989-1990?","o":["Tim Berners-Lee","Vint Cerf","Linus Torvalds","Dennis Ritchie"],"e":"Berners-Lee criou o HTML, o HTTP e o primeiro navegador. Vint Cerf é um dos autores do TCP/IP, base da internet."},{"id":"10zdxmh","c":"tecnologia","d":3,"q":"Qual sistema traduz nomes de domínio, como exemplo.com, em endereços IP?","o":["DNS","DHCP","FTP","SMTP"],"e":"O DNS funciona como uma lista telefônica da internet. O DHCP distribui endereços IP dentro de uma rede."},{"id":"fwas8m","c":"tecnologia","d":3,"q":"Quem criou o núcleo (kernel) do sistema operacional Linux em 1991?","o":["Linus Torvalds","Richard Stallman","Ken Thompson","Bill Joy"],"e":"Torvalds lançou o kernel quando era estudante na Finlândia. Stallman fundou o projeto GNU, que forneceu as ferramentas."},{"id":"1nrbq4p","c":"tecnologia","d":3,"q":"Qual tipo de memória do computador perde seu conteúdo quando a energia é desligada?","o":["RAM","ROM","SSD","HD"],"e":"A RAM é volátil e serve de área de trabalho rápida. SSD, HD e ROM mantêm os dados sem energia."},{"id":"1jehfcm","c":"tecnologia","d":3,"q":"Qual é o valor decimal do número binário 1010?","o":["10","8","12","5"],"e":"Da direita para a esquerda os bits valem 1, 2, 4 e 8. Em 1010 estão ligados o 8 e o 2: 8 + 2 = 10."},{"id":"e8iqln","c":"tecnologia","d":3,"q":"Qual liga metálica é formada basicamente por ferro e carbono?","o":["Aço","Bronze","Latão","Duralumínio"],"e":"Bronze é cobre com estanho e latão é cobre com zinco. No aço, o carbono aumenta a dureza do ferro."},{"id":"1fsjqq3","c":"tecnologia","d":3,"q":"Quem inventou a dinamite, patenteada em 1867?","o":["Alfred Nobel","Michael Faraday","Antoine Lavoisier","Humphry Davy"],"e":"Nobel estabilizou a nitroglicerina com um material absorvente. Sua fortuna financiou os prêmios que levam seu nome."},{"id":"1srnd2p","c":"tecnologia","d":3,"q":"Qual foi o primeiro satélite artificial colocado em órbita, em 1957?","o":["Sputnik 1","Explorer 1","Vostok 1","Telstar 1"],"e":"Lançado pela União Soviética, o Sputnik 1 marcou o início da era espacial. O Explorer 1, dos EUA, veio em 1958."},{"id":"1w9h91e","c":"tecnologia","d":3,"q":"Qual estrutura de dados segue a regra 'último a entrar, primeiro a sair'?","o":["Pilha","Fila","Árvore","Grafo"],"e":"Na pilha (LIFO) só se mexe no topo, como numa pilha de pratos. Na fila (FIFO) sai primeiro quem entrou primeiro."},{"id":"22wnak","c":"tecnologia","d":4,"q":"Qual é a complexidade de tempo, no pior caso, da busca binária em um vetor ordenado?","o":["O(log n)","O(n)","O(n log n)","O(1)"],"e":"A cada comparação metade dos elementos é descartada; para 1 milhão de itens bastam cerca de 20 passos."},{"id":"1i7bfj4","c":"tecnologia","d":4,"q":"Em qual camada do modelo OSI atua o protocolo TCP?","o":["Transporte","Rede","Sessão","Enlace"],"e":"A camada 4 cuida da entrega fim a fim entre processos. O IP atua na camada de rede (3)."},{"id":"1if53s7","c":"tecnologia","d":4,"q":"Qual é a porta padrão do protocolo HTTPS?","o":["443","80","22","8080"],"e":"A porta 80 é do HTTP sem criptografia e a 22 é do SSH. O HTTPS é o HTTP protegido por TLS."},{"id":"1mlwhnd","c":"tecnologia","d":4,"q":"A arquitetura em que programa e dados ficam na mesma memória leva o nome de quem?","o":["John von Neumann","Alan Turing","Claude Shannon","Konrad Zuse"],"e":"Descrita em relatório de 1945 sobre o EDVAC. Na arquitetura Harvard, instruções e dados ficam em memórias separadas."},{"id":"idlpe4","c":"tecnologia","d":4,"q":"Em qual laboratório o transistor foi inventado, em 1947?","o":["Bell Labs","Xerox PARC","IBM Research","MIT Lincoln Lab"],"e":"Bardeen, Brattain e Shockley receberam o Nobel de Física de 1956 pelo transistor, que substituiu as válvulas."},{"id":"1oeq5b7","c":"tecnologia","d":4,"q":"Qual destes algoritmos é de criptografia assimétrica (chave pública)?","o":["RSA","AES","DES","ChaCha20"],"e":"O RSA usa um par de chaves e se apoia na dificuldade de fatorar números grandes. Os outros três são simétricos."},{"id":"s8ygja","c":"tecnologia","d":4,"q":"Qual linguagem Dennis Ritchie criou no início dos anos 1970, ligada ao desenvolvimento do Unix?","o":["C","Pascal","Fortran","COBOL"],"e":"O C sucedeu a linguagem B e permitiu reescrever o Unix em linguagem de alto nível, tornando-o portável."},{"id":"lcucnf","c":"tecnologia","d":4,"q":"Qual ciclo termodinâmico ideal descreve os motores a gasolina com ignição por centelha?","o":["Ciclo Otto","Ciclo Diesel","Ciclo Rankine","Ciclo Brayton"],"e":"No Otto a combustão é modelada a volume constante. Rankine descreve usinas a vapor e Brayton, turbinas a gás."},{"id":"1f0aetm","c":"tecnologia","d":4,"q":"Nas propriedades ACID dos bancos de dados, o que a letra I representa?","o":["Isolamento","Integridade","Idempotência","Indexação"],"e":"ACID: Atomicidade, Consistência, Isolamento e Durabilidade. Isolamento evita que transações simultâneas interfiram entre si."},{"id":"ri81ly","c":"tecnologia","d":4,"q":"Que pioneira da computação desenvolveu o compilador A-0 no início dos anos 1950?","o":["Grace Hopper","Ada Lovelace","Hedy Lamarr","Margaret Hamilton"],"e":"Hopper criou o A-0 para o UNIVAC I e depois influenciou diretamente a criação da linguagem COBOL."},{"id":"j4yyin","c":"tecnologia","d":5,"q":"Que resultado prova ser impossível o consenso determinístico em sistema assíncrono com uma única falha?","o":["Resultado FLP","Teorema CAP","Teorema de Rice","Lei de Amdahl"],"e":"Publicado por Fischer, Lynch e Paterson em 1985. Algoritmos práticos contornam o limite com temporizadores ou aleatoriedade."},{"id":"vkstwu","c":"tecnologia","d":5,"q":"Qual é o tamanho do cabeçalho base (fixo) de um pacote IPv6?","o":["40 bytes","20 bytes","32 bytes","64 bytes"],"e":"O cabeçalho IPv6 tem tamanho fixo e opções em cabeçalhos de extensão. O mínimo do IPv4 é 20 bytes."},{"id":"76yxsw","c":"tecnologia","d":5,"q":"Qual foi o primeiro microprocessador comercial da Intel, lançado em 1971?","o":["4004","8008","8080","4040"],"e":"O 4004 era de 4 bits e foi projetado para uma calculadora da empresa japonesa Busicom. O 8008, de 8 bits, veio em 1972."},{"id":"nptxyn","c":"tecnologia","d":5,"q":"Qual foi o primeiro problema demonstrado NP-completo, por Stephen Cook em 1971?","o":["Satisfatibilidade booleana","Caixeiro-viajante","Cobertura de vértices","Soma de subconjuntos"],"e":"O teorema de Cook-Levin mostrou que todo problema em NP se reduz ao SAT. Em 1972, Karp listou outros 21."},{"id":"17pgqmt","c":"tecnologia","d":5,"q":"Qual é a altitude aproximada da órbita geoestacionária acima da superfície, sobre o equador?","o":["35.786 km","20.200 km","42.164 km","23.222 km"],"e":"O valor de 42.164 km é o raio da órbita medido do centro da Terra. Os satélites do GPS ficam a cerca de 20.200 km."},{"id":"vql1d5","c":"tecnologia","d":5,"q":"O computador Colossus, de Bletchley Park, foi construído para ajudar a quebrar qual cifra?","o":["Lorenz","Enigma","Purple","SIGABA"],"e":"A Enigma era atacada com as máquinas eletromecânicas Bombe. O Colossus atacava a cifra Lorenz, do alto comando alemão."},{"id":"16bap2j","c":"tecnologia","d":5,"q":"No padrão IEEE 754, quantos bits tem o campo de fração (mantissa armazenada) de um double de 64 bits?","o":["52","53","48","56"],"e":"São 1 bit de sinal, 11 de expoente e 52 de fração. Com o bit implícito, a precisão efetiva é de 53 bits."},{"id":"fvfuzr","c":"tecnologia","d":5,"q":"Qual número adimensional é a razão entre a difusividade de momento e a difusividade térmica?","o":["Prandtl","Nusselt","Schmidt","Grashof"],"e":"Pr = viscosidade cinemática / difusividade térmica. O número de Schmidt é o análogo para difusão de massa."},{"id":"oyt5v7","c":"tecnologia","d":5,"q":"Qual computador de programa armazenado a equipe de Maurice Wilkes pôs em operação em Cambridge em 1949?","o":["EDSAC","EDVAC","ENIAC","UNIVAC I"],"e":"O EDSAC inspirou-se no projeto do EDVAC e usava linhas de retardo de mercúrio como memória."},{"id":"hoc5b3","c":"tecnologia","d":5,"q":"Em qual RFC, de 1981, foi publicada a especificação clássica do protocolo TCP?","o":["RFC 793","RFC 791","RFC 768","RFC 821"],"e":"Do mesmo período: RFC 791 define o IP, RFC 768 o UDP e RFC 821 o SMTP."},{"id":"x5j6lz","c":"historia","d":1,"q":"Quem comandava a esquadra portuguesa que chegou ao Brasil em 1500?","o":["Pedro Álvares Cabral","Vasco da Gama","Cristóvão Colombo","Fernão de Magalhães"],"e":"Cabral partiu de Lisboa rumo às Índias e avistou o Monte Pascoal, na atual Bahia, em 22 de abril de 1500."},{"id":"263tdm","c":"historia","d":1,"q":"Qual civilização antiga construiu as pirâmides de Gizé?","o":["Egípcia","Romana","Grega","Persa"],"e":"As pirâmides de Gizé foram erguidas há cerca de 4.500 anos como túmulos para os faraós Quéops, Quéfren e Miquerinos."},{"id":"86to1h","c":"historia","d":1,"q":"Em que país foi construída a Grande Muralha para proteger o território de invasões?","o":["China","Japão","Índia","Mongólia"],"e":"A muralha foi erguida e ampliada por várias dinastias chinesas ao longo de séculos para conter povos vindos do norte."},{"id":"y1phh2","c":"historia","d":1,"q":"Qual princesa assinou a Lei Áurea, que acabou com a escravidão no Brasil?","o":["Princesa Isabel","Princesa Leopoldina","Princesa Januária","Princesa Francisca"],"e":"Isabel, filha de Dom Pedro II, assinou a lei em 13 de maio de 1888, quando governava como regente na ausência do pai."},{"id":"oyuu3q","c":"historia","d":1,"q":"Qual navegador chegou à América em 1492 a serviço da Espanha?","o":["Cristóvão Colombo","Vasco da Gama","Bartolomeu Dias","Américo Vespúcio"],"e":"Colombo buscava um caminho para as Índias navegando para oeste e desembarcou em ilhas do Caribe em outubro de 1492."},{"id":"14d55fd","c":"historia","d":1,"q":"Como eram chamados os reis do Egito Antigo?","o":["Faraós","Césares","Sultões","Czares"],"e":"O faraó era visto como um deus vivo e concentrava o poder político e religioso no Egito Antigo."},{"id":"1xyctuu","c":"historia","d":1,"q":"Em que cidade fica o Coliseu, a arena onde lutavam os gladiadores?","o":["Roma","Atenas","Cartago","Alexandria"],"e":"O Coliseu foi inaugurado no ano 80 d.C. e recebia dezenas de milhares de espectadores na capital do Império Romano."},{"id":"76fcys","c":"historia","d":1,"q":"Qual era a língua falada pelos antigos romanos?","o":["Latim","Grego","Hebraico","Aramaico"],"e":"Do latim nasceram as línguas românicas, como o português, o espanhol, o francês, o italiano e o romeno."},{"id":"1olpmkj","c":"historia","d":1,"q":"Em que data se comemora a Independência do Brasil?","o":["7 de setembro","15 de novembro","21 de abril","13 de maio"],"e":"Em 7 de setembro de 1822, Dom Pedro proclamou a independência às margens do riacho Ipiranga, em São Paulo."},{"id":"1rjjh6y","c":"historia","d":1,"q":"Qual navio famoso afundou em 1912 depois de bater em um iceberg?","o":["Titanic","Lusitania","Britannic","Bismarck"],"e":"O Titanic afundou no Atlântico Norte em sua viagem inaugural, entre a Inglaterra e Nova York, em abril de 1912."},{"id":"17p9omg","c":"historia","d":2,"q":"Em que ano foi proclamada a República no Brasil?","o":["1889","1822","1888","1891"],"e":"Em 15 de novembro de 1889 o marechal Deodoro da Fonseca liderou o golpe que pôs fim ao Império de Dom Pedro II."},{"id":"kmbplv","c":"historia","d":2,"q":"Quem foi o primeiro imperador do Brasil?","o":["Dom Pedro I","Dom Pedro II","Dom João VI","Dom Miguel"],"e":"Dom Pedro I foi coroado em 1822, após a independência, e abdicou em 1831 em favor do filho, então com cinco anos."},{"id":"15mn0kj","c":"historia","d":2,"q":"Qual acontecimento de 14 de julho de 1789 se tornou símbolo do início da Revolução Francesa?","o":["Queda da Bastilha","Batalha de Waterloo","Execução de Luís XVI","Coroação de Napoleão"],"e":"A Bastilha era uma prisão-fortaleza em Paris, símbolo do absolutismo; sua tomada é hoje a festa nacional francesa."},{"id":"s2vai2","c":"historia","d":2,"q":"Em que ano terminou a Segunda Guerra Mundial?","o":["1945","1939","1918","1950"],"e":"A Alemanha se rendeu em maio de 1945 e o Japão em setembro, após as bombas atômicas de Hiroshima e Nagasaki."},{"id":"fak33w","c":"historia","d":2,"q":"Qual povo construiu a cidade de Machu Picchu, nos Andes?","o":["Incas","Astecas","Maias","Olmecas"],"e":"Machu Picchu foi erguida no século XV, no atual Peru, e ganhou fama mundial após a expedição de Hiram Bingham, em 1911."},{"id":"1ypccge","c":"historia","d":2,"q":"Quem foi o primeiro presidente dos Estados Unidos?","o":["George Washington","Thomas Jefferson","Abraham Lincoln","Benjamin Franklin"],"e":"Washington comandou o exército na Guerra de Independência e tomou posse como presidente em 1789."},{"id":"1bwm9a","c":"historia","d":2,"q":"Qual foi a primeira capital do Brasil colonial?","o":["Salvador","Rio de Janeiro","Olinda","São Vicente"],"e":"Salvador foi fundada em 1549 para sediar o Governo-Geral e foi capital até 1763, quando a sede passou ao Rio de Janeiro."},{"id":"4cv7c8","c":"historia","d":2,"q":"Qual participante da Inconfidência Mineira foi enforcado em 1792?","o":["Tiradentes","Frei Caneca","Zumbi dos Palmares","Filipe dos Santos"],"e":"Joaquim José da Silva Xavier foi o único inconfidente executado; o dia de sua morte, 21 de abril, é feriado nacional."},{"id":"116padq","c":"historia","d":2,"q":"Em que cidade ficava o muro derrubado em 1989, símbolo da Guerra Fria?","o":["Berlim","Viena","Praga","Varsóvia"],"e":"Erguido em 1961, o muro separava a parte oriental, socialista, da parte ocidental, capitalista, da cidade."},{"id":"9w1inu","c":"historia","d":2,"q":"Quem desenvolveu a prensa de tipos móveis na Europa no século XV?","o":["Johannes Gutenberg","Leonardo da Vinci","Galileu Galilei","Nicolau Copérnico"],"e":"A prensa de Gutenberg, criada em Mainz por volta de 1450, barateou os livros e acelerou a circulação de ideias."},{"id":"qec5d3","c":"historia","d":3,"q":"Qual tratado de 1494 dividiu entre Portugal e Espanha as terras descobertas e por descobrir?","o":["Tratado de Tordesilhas","Tratado de Madri","Tratado de Utrecht","Tratado de Santo Ildefonso"],"e":"A linha passava 370 léguas a oeste de Cabo Verde: terras a leste seriam de Portugal e as a oeste, da Espanha."},{"id":"y51y8i","c":"historia","d":3,"q":"Qual tratado de 1919 impôs à Alemanha perdas territoriais e reparações após a Primeira Guerra?","o":["Tratado de Versalhes","Tratado de Brest-Litovsk","Tratado de Trianon","Tratado de Sèvres"],"e":"As duras condições de Versalhes alimentaram o ressentimento alemão, explorado depois pela propaganda nazista."},{"id":"1t3razw","c":"historia","d":3,"q":"Quem foi assassinado em Sarajevo em 1914, fato que desencadeou a Primeira Guerra Mundial?","o":["Francisco Ferdinando","Guilherme II","Nicolau II","Francisco José I"],"e":"O herdeiro do trono austro-húngaro foi morto pelo sérvio-bósnio Gavrilo Princip, acionando o sistema de alianças."},{"id":"109fecq","c":"historia","d":3,"q":"Como ficou conhecida a ditadura de Getúlio Vargas entre 1937 e 1945?","o":["Estado Novo","República Velha","Governo Provisório","República da Espada"],"e":"Vargas fechou o Congresso em 1937, outorgou uma Constituição autoritária e governou sem partidos até ser deposto."},{"id":"i7o449","c":"historia","d":3,"q":"Em que ano Constantinopla foi conquistada pelos turcos otomanos?","o":["1453","1492","1204","1517"],"e":"A conquista pelo sultão Maomé II encerrou o Império Bizantino e é um marco tradicional do fim da Idade Média."},{"id":"n32qlc","c":"historia","d":3,"q":"Qual documento de 1215, imposto ao rei João Sem Terra, limitou o poder real na Inglaterra?","o":["Magna Carta","Bill of Rights","Habeas Corpus Act","Petição de Direitos"],"e":"Os barões obrigaram o rei a aceitar que nem ele estava acima da lei, princípio básico do constitucionalismo."},{"id":"1y8e8ex","c":"historia","d":3,"q":"Quais países formaram a Tríplice Aliança contra o Paraguai entre 1864 e 1870?","o":["Brasil, Argentina e Uruguai","Brasil, Argentina e Chile","Brasil, Uruguai e Bolívia","Argentina, Chile e Uruguai"],"e":"A aliança foi firmada em 1865; a guerra terminou em 1870 com a morte de Solano López e o Paraguai devastado."},{"id":"yd1ura","c":"historia","d":3,"q":"Quem liderou a Longa Marcha e proclamou a República Popular da China em 1949?","o":["Mao Tsé-Tung","Chiang Kai-shek","Sun Yat-sen","Deng Xiaoping"],"e":"Mao venceu a guerra civil contra os nacionalistas de Chiang Kai-shek, que se refugiaram na ilha de Taiwan."},{"id":"vaohje","c":"historia","d":3,"q":"Qual sanitarista dirigia a campanha de vacinação que provocou a Revolta da Vacina, em 1904?","o":["Oswaldo Cruz","Carlos Chagas","Vital Brazil","Adolfo Lutz"],"e":"Oswaldo Cruz combatia varíola, febre amarela e peste no Rio; a vacinação obrigatória gerou dias de motins na cidade."},{"id":"117yttu","c":"historia","d":3,"q":"Em que era, iniciada em 1868, o Japão encerrou o xogunato e se modernizou rapidamente?","o":["Era Meiji","Era Edo","Era Heian","Era Showa"],"e":"A Restauração Meiji devolveu o poder ao imperador e promoveu industrialização e reformas inspiradas no Ocidente."},{"id":"1cadm0u","c":"historia","d":4,"q":"Qual acordo de 1648 encerrou a Guerra dos Trinta Anos?","o":["Paz de Vestfália","Paz de Augsburgo","Paz de Utrecht","Paz dos Pireneus"],"e":"Os tratados de Vestfália consagraram a soberania dos Estados e são vistos como base do sistema internacional moderno."},{"id":"1aih260","c":"historia","d":4,"q":"Qual revolta de 1835, em Salvador, foi organizada por africanos muçulmanos escravizados e libertos?","o":["Revolta dos Malês","Sabinada","Conjuração Baiana","Balaiada"],"e":"Malê vem do iorubá imale, muçulmano. O levante durou uma noite e foi duramente reprimido pelas autoridades."},{"id":"q8rb18","c":"historia","d":4,"q":"Qual batalha de 1066 garantiu a Guilherme da Normandia a conquista da Inglaterra?","o":["Hastings","Stamford Bridge","Agincourt","Bannockburn"],"e":"Em Hastings morreu o rei anglo-saxão Haroldo II; a conquista normanda transformou a língua e a nobreza inglesas."},{"id":"n0abw1","c":"historia","d":4,"q":"Qual imperador inca foi capturado em Cajamarca e executado pelos espanhóis em 1533?","o":["Atahualpa","Huáscar","Manco Cápac","Pachacútec"],"e":"Atahualpa acabara de vencer o irmão Huáscar numa guerra civil; pagou um enorme resgate em ouro e mesmo assim foi morto."},{"id":"1vnhlk6","c":"historia","d":4,"q":"Qual imperador romano criou a Tetrarquia, dividindo o governo entre quatro governantes?","o":["Diocleciano","Constantino","Teodósio","Aureliano"],"e":"No fim do século III, Diocleciano repartiu o poder entre dois augustos e dois césares para administrar o Império."},{"id":"n7xvg1","c":"historia","d":4,"q":"Qual encontro diplomático de 1814-1815 redesenhou o mapa europeu após as guerras napoleônicas?","o":["Congresso de Viena","Congresso de Berlim","Congresso de Verona","Congresso de Paris"],"e":"Conduzido por figuras como Metternich, buscou restaurar as monarquias e manter o equilíbrio entre as potências."},{"id":"1ymbx62","c":"historia","d":4,"q":"Qual reunião de 1884-1885 fixou regras para a ocupação da África pelas potências europeias?","o":["Conferência de Berlim","Conferência de Bruxelas","Conferência de Algeciras","Conferência de Haia"],"e":"Convocada por Bismarck, exigiu ocupação efetiva dos territórios e acelerou a partilha do continente africano."},{"id":"keng2g","c":"historia","d":4,"q":"Quem foi o primeiro governador-geral do Brasil, fundador de Salvador em 1549?","o":["Tomé de Sousa","Mem de Sá","Duarte da Costa","Martim Afonso de Sousa"],"e":"Tomé de Sousa chegou com os primeiros jesuítas, entre eles Manuel da Nóbrega, para centralizar a administração."},{"id":"1vp242s","c":"historia","d":4,"q":"Qual foi a última dinastia imperial da China, derrubada em 1912?","o":["Qing","Ming","Yuan","Song"],"e":"De origem manchu, os Qing governaram desde 1644; o último imperador, Puyi, abdicou ainda criança."},{"id":"1rfszah","c":"historia","d":4,"q":"Qual governante do Império do Mali ficou célebre pela peregrinação a Meca em 1324?","o":["Mansa Musa","Sundiata Keita","Sonni Ali","Askia Mohammed"],"e":"Mansa Musa distribuiu tanto ouro ao passar pelo Cairo que o valor do metal caiu na região por anos."},{"id":"15zsnxr","c":"historia","d":5,"q":"Qual diplomata nascido em Santos foi o principal articulador português do Tratado de Madri (1750)?","o":["Alexandre de Gusmão","Bartolomeu de Gusmão","Luís da Cunha","Sebastião de Carvalho"],"e":"Secretário de D. João V, defendeu o uti possidetis: a terra pertence a quem a ocupa de fato."},{"id":"163h3db","c":"historia","d":5,"q":"Qual batalha de 1071 abriu a Anatólia aos turcos seljúcidas após a derrota bizantina?","o":["Manzikert","Miriocéfalo","Yarmuk","Dorileia"],"e":"O sultão Alp Arslan derrotou e capturou o imperador Romano IV Diógenes, abalando o domínio bizantino na Ásia Menor."},{"id":"tse87q","c":"historia","d":5,"q":"Qual revolta regencial, no Maranhão, teve entre seus líderes Cosme Bento, o Negro Cosme?","o":["Balaiada","Cabanagem","Sabinada","Cabanada"],"e":"Ocorrida entre 1838 e 1841, uniu vaqueiros, artesãos e quilombolas e foi reprimida pelo futuro duque de Caxias."},{"id":"1rbi8gj","c":"historia","d":5,"q":"Qual jurista chefiou as comissões que compilaram o Corpus Juris Civilis de Justiniano?","o":["Triboniano","Procópio","Belisário","Ulpiano"],"e":"Triboniano coordenou a compilação no século VI; a obra se tornou a base do direito civil de boa parte da Europa."},{"id":"1wairls","c":"historia","d":5,"q":"Com qual rei hitita Ramsés II firmou um tratado de paz anos após a batalha de Kadesh?","o":["Hattusili III","Muwatalli II","Suppiluliuma I","Mursili II"],"e":"Muwatalli II enfrentou Ramsés em Kadesh; a paz veio com seu irmão Hattusili III, num dos tratados mais antigos conhecidos."},{"id":"1ou1vk7","c":"historia","d":5,"q":"Qual tratado de 1842 encerrou a Primeira Guerra do Ópio e cedeu Hong Kong aos britânicos?","o":["Tratado de Nanquim","Tratado de Tianjin","Tratado de Shimonoseki","Tratado de Whampoa"],"e":"Foi o primeiro dos chamados tratados desiguais, que também abriu cinco portos chineses ao comércio britânico."},{"id":"1n2d5w7","c":"historia","d":5,"q":"Qual imperador etíope derrotou o exército italiano na batalha de Adwa, em 1896?","o":["Menelik II","Tewodros II","Yohannes IV","Haile Selassie"],"e":"A vitória em Adwa garantiu a independência da Etiópia em plena partilha da África e virou símbolo anticolonial."},{"id":"boil93","c":"historia","d":5,"q":"Qual ministro da Fazenda do governo Deodoro conduziu a política conhecida como Encilhamento?","o":["Rui Barbosa","Joaquim Murtinho","Rodrigues Alves","Bernardino de Campos"],"e":"A emissão de moeda para estimular a indústria gerou especulação desenfreada na bolsa, inflação e falências."},{"id":"j7trdb","c":"historia","d":5,"q":"Quem foi o último rei merovíngio, deposto em 751 por Pepino, o Breve?","o":["Childerico III","Clóvis II","Dagoberto I","Clotário II"],"e":"Childerico foi tonsurado e enviado a um mosteiro; com Pepino começou a dinastia carolíngia entre os francos."},{"id":"ymkc0n","c":"historia","d":5,"q":"Quem assumiu o trono português após a morte de D. Sebastião em Alcácer-Quibir, em 1578?","o":["Dom Henrique","Dom António","Dom Duarte","Dom Afonso"],"e":"O cardeal D. Henrique, tio-avô de Sebastião, morreu em 1580 sem herdeiros, abrindo caminho à União Ibérica."},{"id":"o5l6bz","c":"geografia","d":1,"q":"Qual é a capital do Brasil?","o":["Brasília","Rio de Janeiro","São Paulo","Salvador"],"e":"Brasília foi inaugurada em 1960, no Planalto Central, para substituir o Rio de Janeiro como capital."},{"id":"iei3qs","c":"geografia","d":1,"q":"Qual é o maior oceano do planeta?","o":["Pacífico","Atlântico","Índico","Ártico"],"e":"O Pacífico cobre cerca de um terço da superfície da Terra e é maior do que todos os continentes somados."},{"id":"18gqq1m","c":"geografia","d":1,"q":"Em qual continente fica o Egito?","o":["África","Ásia","Europa","Oceania"],"e":"Quase todo o Egito fica no nordeste da África; apenas a península do Sinai pertence à Ásia."},{"id":"c93bhv","c":"geografia","d":1,"q":"Qual é a capital da França?","o":["Paris","Londres","Roma","Madri"],"e":"Paris fica às margens do rio Sena e abriga monumentos como a Torre Eiffel e o Museu do Louvre."},{"id":"13nu7il","c":"geografia","d":1,"q":"Qual é a maior floresta tropical do mundo?","o":["Floresta Amazônica","Floresta do Congo","Mata Atlântica","Floresta de Bornéu"],"e":"A Amazônia se estende por nove países da América do Sul, e a maior parte dela fica no Brasil."},{"id":"1p3b7bw","c":"geografia","d":1,"q":"Qual é a montanha mais alta do mundo acima do nível do mar?","o":["Everest","K2","Aconcágua","Kilimanjaro"],"e":"O Everest fica no Himalaia, na fronteira entre o Nepal e a China, e passa dos 8.800 metros de altitude."},{"id":"6l77to","c":"geografia","d":1,"q":"Qual oceano banha o litoral do Brasil?","o":["Atlântico","Pacífico","Índico","Antártico"],"e":"Todo o litoral brasileiro, do Amapá ao Rio Grande do Sul, é banhado pelo oceano Atlântico."},{"id":"4ch0dx","c":"geografia","d":1,"q":"Em que país ficam as cidades de Tóquio e Osaka?","o":["Japão","China","Coreia do Sul","Tailândia"],"e":"O Japão é um arquipélago no leste da Ásia; Tóquio e Osaka ficam em Honshu, a maior de suas ilhas."},{"id":"1p1k5si","c":"geografia","d":1,"q":"Qual continente é quase todo coberto de gelo e abriga o Polo Sul?","o":["Antártida","Oceania","Europa","Ásia"],"e":"A Antártida não tem moradores permanentes, só pesquisadores, e guarda a maior parte do gelo do planeta."},{"id":"d938m2","c":"geografia","d":1,"q":"Qual linha imaginária divide a Terra em hemisfério Norte e hemisfério Sul?","o":["Linha do Equador","Trópico de Câncer","Meridiano de Greenwich","Trópico de Capricórnio"],"e":"O Equador é o paralelo de latitude zero; já o Meridiano de Greenwich separa os hemisférios Leste e Oeste."},{"id":"1a8p3wd","c":"geografia","d":2,"q":"Qual é a capital da Argentina?","o":["Buenos Aires","Montevidéu","Santiago","Assunção"],"e":"Buenos Aires fica às margens do Rio da Prata, em frente ao Uruguai, e é o principal porto argentino."},{"id":"1vw7hz9","c":"geografia","d":2,"q":"Qual é o maior deserto quente do mundo?","o":["Saara","Kalahari","Gobi","Atacama"],"e":"O Saara ocupa boa parte do norte da África, do Atlântico ao Mar Vermelho, com área próxima à do Brasil."},{"id":"p6zgez","c":"geografia","d":2,"q":"Quais são os dois países da América do Sul que não fazem fronteira com o Brasil?","o":["Chile e Equador","Chile e Peru","Equador e Colômbia","Bolívia e Equador"],"e":"O Brasil faz fronteira com dez vizinhos; Chile e Equador ficam separados dele por outros países andinos."},{"id":"7844g2","c":"geografia","d":2,"q":"Qual cordilheira acompanha a costa oeste da América do Sul?","o":["Cordilheira dos Andes","Montanhas Rochosas","Cordilheira do Himalaia","Montes Apalaches"],"e":"Os Andes se estendem da Venezuela ao sul do Chile e formam a mais longa cadeia de montanhas em terra firme."},{"id":"1bf4o4q","c":"geografia","d":2,"q":"Qual é a capital da Austrália?","o":["Camberra","Sydney","Melbourne","Perth"],"e":"Camberra foi planejada para ser capital justamente por causa da rivalidade entre Sydney e Melbourne."},{"id":"qob9bm","c":"geografia","d":2,"q":"Qual região brasileira tem o maior número de estados?","o":["Nordeste","Norte","Sudeste","Centro-Oeste"],"e":"O Nordeste tem nove estados, do Maranhão à Bahia; a região Norte vem em seguida, com sete."},{"id":"1kgwy9a","c":"geografia","d":2,"q":"Qual rio atravessa o Egito e deságua no Mar Mediterrâneo?","o":["Nilo","Níger","Congo","Eufrates"],"e":"O Nilo corre de sul para norte e suas cheias anuais tornaram possível a agricultura em pleno deserto."},{"id":"b68hmq","c":"geografia","d":2,"q":"Qual é o menor país do mundo em área?","o":["Vaticano","Mônaco","San Marino","Liechtenstein"],"e":"O Vaticano fica dentro da cidade de Roma, tem menos de meio quilômetro quadrado e é a sede da Igreja Católica."},{"id":"ngovwu","c":"geografia","d":2,"q":"Qual bioma predomina no sertão do Nordeste brasileiro?","o":["Caatinga","Cerrado","Pampa","Pantanal"],"e":"A Caatinga é um bioma exclusivamente brasileiro, com plantas adaptadas à seca, como cactos e arbustos espinhosos."},{"id":"yr6msq","c":"geografia","d":2,"q":"Qual é a capital do Canadá?","o":["Ottawa","Toronto","Montreal","Vancouver"],"e":"Ottawa fica na divisa entre as províncias de Ontário e Quebec, entre as áreas de língua inglesa e francesa."},{"id":"19qwed7","c":"geografia","d":3,"q":"Qual estreito separa a Europa da África e liga o Atlântico ao Mediterrâneo?","o":["Estreito de Gibraltar","Estreito do Bósforo","Estreito de Ormuz","Estreito de Messina"],"e":"No ponto mais estreito, cerca de 14 km separam a Espanha do Marrocos."},{"id":"1hlkpm1","c":"geografia","d":3,"q":"Qual é o ponto mais alto do Brasil?","o":["Pico da Neblina","Pico da Bandeira","Monte Roraima","Pedra da Mina"],"e":"O Pico da Neblina fica no Amazonas, perto da Venezuela, e tem quase 3 mil metros de altitude."},{"id":"1bk3urz","c":"geografia","d":3,"q":"Qual é a capital da Turquia?","o":["Ancara","Istambul","Esmirna","Antália"],"e":"Ancara, no interior da Anatólia, virou capital em 1923 com a república de Atatürk; Istambul é a maior cidade."},{"id":"qfvd3w","c":"geografia","d":3,"q":"Qual rio nasce na Floresta Negra, na Alemanha, e deságua no Mar Negro?","o":["Danúbio","Reno","Elba","Volga"],"e":"O Danúbio atravessa dez países e banha quatro capitais: Viena, Bratislava, Budapeste e Belgrado."},{"id":"1s6k9ie","c":"geografia","d":3,"q":"Qual tipo de clima predomina na maior parte da região Sul do Brasil?","o":["Subtropical","Tropical","Semiárido","Equatorial"],"e":"Abaixo do Trópico de Capricórnio as estações são bem marcadas, com invernos frios, geadas e chuvas bem distribuídas."},{"id":"6jdw44","c":"geografia","d":3,"q":"Qual canal liga o Mar Mediterrâneo ao Mar Vermelho?","o":["Canal de Suez","Canal do Panamá","Canal de Corinto","Canal de Kiel"],"e":"Aberto em 1869 no Egito, o canal evita que navios entre Europa e Ásia precisem contornar a África."},{"id":"mog8pm","c":"geografia","d":3,"q":"Qual é o maior lago da África em superfície?","o":["Lago Vitória","Lago Tanganica","Lago Malawi","Lago Chade"],"e":"O Vitória é partilhado por Tanzânia, Uganda e Quênia e é a principal fonte do Nilo Branco."},{"id":"jwgw4c","c":"geografia","d":3,"q":"Quais são os dois únicos países da América do Sul sem saída para o mar?","o":["Bolívia e Paraguai","Bolívia e Uruguai","Paraguai e Equador","Paraguai e Uruguai"],"e":"A Bolívia perdeu seu litoral para o Chile na Guerra do Pacífico; o Paraguai acessa o mar pelos rios da bacia do Prata."},{"id":"1pjyjof","c":"geografia","d":3,"q":"Qual cadeia de montanhas russa, de norte a sul, é o limite tradicional entre Europa e Ásia?","o":["Montes Urais","Montes Cárpatos","Montes Altai","Montes Apeninos"],"e":"Os Urais são montanhas antigas e desgastadas, ricas em minérios, que se estendem por cerca de 2.500 km."},{"id":"468k7p","c":"geografia","d":3,"q":"Em qual estado brasileiro nasce o rio São Francisco?","o":["Minas Gerais","Bahia","Goiás","Pernambuco"],"e":"O Velho Chico nasce na Serra da Canastra e deságua no Atlântico, na divisa entre Alagoas e Sergipe."},{"id":"1hhd4xk","c":"geografia","d":4,"q":"Qual é a capital do Marrocos?","o":["Rabat","Casablanca","Marrakech","Fez"],"e":"Casablanca é a maior cidade e o centro econômico, mas a sede do governo e da monarquia fica em Rabat."},{"id":"e8jven","c":"geografia","d":4,"q":"Qual é o lago mais profundo do mundo?","o":["Baikal","Tanganica","Titicaca","Superior"],"e":"O Baikal, na Sibéria, passa de 1.600 m de profundidade e guarda cerca de um quinto da água doce líquida superficial."},{"id":"11nh90u","c":"geografia","d":4,"q":"Qual corrente marítima fria, na costa do Chile e do Peru, contribui para a aridez do Atacama?","o":["Corrente de Humboldt","Corrente de Benguela","Corrente do Labrador","Corrente das Canárias"],"e":"A água fria resfria o ar e dificulta a formação de chuva; em compensação, torna a região muito rica em peixes."},{"id":"f9aa82","c":"geografia","d":4,"q":"Qual estreito separa a ilha da Tasmânia do continente australiano?","o":["Estreito de Bass","Estreito de Torres","Estreito de Cook","Estreito de Malaca"],"e":"O Estreito de Torres fica ao norte, entre Austrália e Nova Guiné; o de Cook separa as ilhas da Nova Zelândia."},{"id":"1qso4vl","c":"geografia","d":4,"q":"Em qual país fica o monte Kilimanjaro, ponto mais alto da África?","o":["Tanzânia","Quênia","Uganda","Etiópia"],"e":"O Kilimanjaro é um vulcão isolado no nordeste da Tanzânia, bem perto da fronteira com o Quênia."},{"id":"1t16or9","c":"geografia","d":4,"q":"Qual é a única capital estadual brasileira cortada pela Linha do Equador?","o":["Macapá","Boa Vista","Belém","Manaus"],"e":"Em Macapá há o monumento Marco Zero; Boa Vista é a única capital totalmente situada no hemisfério Norte."},{"id":"1brnz0s","c":"geografia","d":4,"q":"Qual rio forma as Cataratas Vitória, na fronteira entre Zâmbia e Zimbábue?","o":["Zambeze","Limpopo","Okavango","Orange"],"e":"O Zambeze deságua no Índico, em Moçambique; as cataratas são chamadas localmente de Mosi-oa-Tunya."},{"id":"fv4aeb","c":"geografia","d":4,"q":"Qual país africano é inteiramente cercado pelo território da África do Sul?","o":["Lesoto","Essuatíni","Botsuana","Malawi"],"e":"O Lesoto é um reino montanhoso encravado; Essuatíni também é pequeno, mas faz fronteira com Moçambique."},{"id":"qz62ni","c":"geografia","d":4,"q":"Qual lago da Ásia Central encolheu drasticamente após o desvio de seus rios para irrigação?","o":["Mar de Aral","Mar Cáspio","Lago Zaysan","Lago Issyk-Kul"],"e":"A partir dos anos 1960, a irrigação de algodão desviou os rios Amu Darya e Syr Darya, secando grande parte do Aral."},{"id":"hrc32y","c":"geografia","d":4,"q":"Em qual estado fica a Ilha do Bananal, formada pelos braços do rio Araguaia?","o":["Tocantins","Mato Grosso","Goiás","Pará"],"e":"A ilha fica entre o Araguaia e o Javaés, no oeste do Tocantins, e abriga um parque nacional e terras indígenas."},{"id":"9rjl3f","c":"geografia","d":5,"q":"Qual é a capital de Palau, país insular do Pacífico?","o":["Ngerulmud","Koror","Majuro","Funafuti"],"e":"Koror, a maior cidade, foi capital até 2006, quando a sede do governo passou para Ngerulmud, na ilha de Babeldaob."},{"id":"10lxmsq","c":"geografia","d":5,"q":"Qual é o segundo ponto mais alto do Brasil, vizinho ao Pico da Neblina?","o":["Pico 31 de Março","Pico da Bandeira","Pedra da Mina","Monte Roraima"],"e":"O 31 de Março fica na mesma serra do Imeri, na fronteira com a Venezuela, e tem cerca de 2.970 m."},{"id":"9au9a3","c":"geografia","d":5,"q":"Qual lago salgado de Djibuti é o ponto mais baixo do continente africano?","o":["Lago Assal","Lago Abbe","Lago Turkana","Lago Natron"],"e":"O Assal fica a cerca de 155 m abaixo do nível do mar, na Depressão de Afar, e é um dos lagos mais salgados da Terra."},{"id":"13kj697","c":"geografia","d":5,"q":"Além de Liechtenstein, qual é o único país cercado apenas por países sem saída para o mar?","o":["Uzbequistão","Cazaquistão","Mongólia","Quirguistão"],"e":"São os dois países duplamente encravados: é preciso cruzar ao menos duas fronteiras para chegar ao oceano."},{"id":"1ug1rli","c":"geografia","d":5,"q":"Qual é o ponto mais alto da Antártida?","o":["Maciço Vinson","Monte Erebus","Monte Kirkpatrick","Monte Sidley"],"e":"O Vinson fica nos Montes Ellsworth e chega a quase 4.900 m; o Erebus é o vulcão ativo mais austral do planeta."},{"id":"9pqzxj","c":"geografia","d":5,"q":"Qual é o ponto culminante da ilha da Nova Guiné?","o":["Puncak Jaya","Monte Wilhelm","Puncak Trikora","Monte Giluwe"],"e":"Também chamado Pirâmide Carstensz, fica na parte indonésia da ilha e é o pico mais alto situado em uma ilha."},{"id":"19aikfq","c":"geografia","d":5,"q":"Qual é o ponto mais oriental do Brasil continental?","o":["Ponta do Seixas","Cabo de São Roque","Cabo de Santo Agostinho","Ponta do Calcanhar"],"e":"A Ponta do Seixas fica em João Pessoa, na Paraíba, ao lado do Cabo Branco, e é também o extremo leste das Américas continentais."},{"id":"z4k5ng","c":"geografia","d":5,"q":"Qual estreito liga o Mar Vermelho ao Golfo de Áden?","o":["Estreito de Bab el-Mandeb","Estreito de Ormuz","Estreito de Tiran","Estreito de Malaca"],"e":"O nome significa Porta das Lamentações em árabe; o estreito separa o Iêmen de Djibuti e da Eritreia."},{"id":"1vpy50r","c":"geografia","d":5,"q":"Qual vento seco e carregado de poeira sopra do Saara sobre a África Ocidental no inverno boreal?","o":["Harmatão","Siroco","Mistral","Bora"],"e":"O harmatão sopra de nordeste rumo ao Golfo da Guiné; o siroco também vem do Saara, mas segue para o Mediterrâneo."},{"id":"x6hpzu","c":"geografia","d":5,"q":"Qual é o ponto mais meridional do continente africano?","o":["Cabo das Agulhas","Cabo da Boa Esperança","Cabo Guardafui","Cabo Bojador"],"e":"O Cabo das Agulhas fica a sudeste do Cabo da Boa Esperança e é o marco oficial entre o Atlântico e o Índico."},{"id":"1yfyokw","c":"artes","d":1,"q":"Quem pintou a Mona Lisa?","o":["Leonardo da Vinci","Michelangelo","Rafael Sanzio","Sandro Botticelli"],"e":"Leonardo pintou o retrato no início do século XVI. Hoje ele fica no Museu do Louvre, em Paris."},{"id":"ygkmf6","c":"artes","d":1,"q":"Quem escreveu as histórias do Sítio do Picapau Amarelo?","o":["Monteiro Lobato","Ziraldo","Ruth Rocha","Mauricio de Sousa"],"e":"Lobato criou Emília, Narizinho e Pedrinho. Ziraldo fez o Menino Maluquinho e Mauricio de Sousa, a Turma da Mônica."},{"id":"at7vy5","c":"artes","d":1,"q":"Qual instrumento musical tem teclas brancas e pretas?","o":["Piano","Violino","Flauta","Tambor"],"e":"Um piano moderno tem 88 teclas: 52 brancas e 36 pretas. Cada tecla aciona um martelo que bate nas cordas."},{"id":"85lxsc","c":"artes","d":1,"q":"Misturando tinta azul com tinta amarela, que cor obtemos?","o":["Verde","Roxo","Laranja","Marrom"],"e":"Azul e amarelo formam o verde. Já o roxo vem de azul com vermelho, e o laranja, de amarelo com vermelho."},{"id":"wz9vaj","c":"artes","d":1,"q":"Em que país ficam as famosas pirâmides de Gizé?","o":["Egito","México","Grécia","Índia"],"e":"As pirâmides de Gizé foram construídas há mais de 4 mil anos como túmulos para faraós egípcios."},{"id":"1x019h5","c":"artes","d":1,"q":"Qual boneco de madeira tem o nariz que cresce quando ele mente?","o":["Pinóquio","Peter Pan","Gepeto","Pequeno Polegar"],"e":"Pinóquio foi criado pelo escritor italiano Carlo Collodi. Gepeto é o carpinteiro que esculpe o boneco."},{"id":"rgn6fw","c":"artes","d":1,"q":"Como se chama a arte de fazer estátuas?","o":["Escultura","Pintura","Gravura","Arquitetura"],"e":"O escultor dá forma a materiais como pedra, madeira, argila ou metal, criando obras em três dimensões."},{"id":"12uy6ue","c":"artes","d":1,"q":"Em que cidade fica a Torre Eiffel?","o":["Paris","Londres","Roma","Madri"],"e":"A torre de ferro foi erguida em Paris para a Exposição Universal de 1889 e leva o nome do engenheiro Gustave Eiffel."},{"id":"1uoc5ed","c":"artes","d":1,"q":"Como se chama a pessoa que rege uma orquestra usando uma batuta?","o":["Maestro","Solista","Tenor","Compositor"],"e":"O maestro coordena os músicos, marcando o ritmo e a intensidade. O compositor é quem escreve a música."},{"id":"hu1i5a","c":"artes","d":1,"q":"Qual estátua de braços abertos fica no alto do morro do Corcovado, no Rio de Janeiro?","o":["Cristo Redentor","Padre Cícero","Borba Gato","Cristo Rei"],"e":"O Cristo Redentor foi inaugurado em 1931 e tem cerca de 30 metros de altura, sem contar o pedestal."},{"id":"1s68b64","c":"artes","d":2,"q":"Quem escreveu o romance 'Dom Casmurro'?","o":["Machado de Assis","José de Alencar","Aluísio Azevedo","Lima Barreto"],"e":"Publicado em 1899, o livro é narrado por Bentinho, que desconfia de uma traição de sua esposa, Capitu."},{"id":"adt7pm","c":"artes","d":2,"q":"Quem pintou o teto da Capela Sistina, no Vaticano?","o":["Michelangelo","Leonardo da Vinci","Rafael","Caravaggio"],"e":"Michelangelo pintou o teto entre 1508 e 1512. A cena mais famosa é 'A Criação de Adão'."},{"id":"2l34h1","c":"artes","d":2,"q":"Quem escreveu a peça 'Romeu e Julieta'?","o":["William Shakespeare","Charles Dickens","Victor Hugo","Oscar Wilde"],"e":"A tragédia de Shakespeare se passa em Verona, na Itália, e conta o amor entre jovens de famílias rivais."},{"id":"1g1r0t1","c":"artes","d":2,"q":"Qual pintor holandês é o autor de 'A Noite Estrelada'?","o":["Vincent van Gogh","Rembrandt","Johannes Vermeer","Piet Mondrian"],"e":"Van Gogh pintou a tela em 1889, quando estava internado em um hospício em Saint-Rémy, no sul da França."},{"id":"tdl620","c":"artes","d":2,"q":"Qual arquiteto projetou os principais edifícios de Brasília?","o":["Oscar Niemeyer","Lúcio Costa","Burle Marx","Lina Bo Bardi"],"e":"Niemeyer desenhou os prédios, como a Catedral e o Congresso. Lúcio Costa fez o plano urbanístico da cidade."},{"id":"tg0h6t","c":"artes","d":2,"q":"Qual compositor continuou criando grandes obras mesmo depois de ficar surdo?","o":["Beethoven","Mozart","Bach","Chopin"],"e":"Beethoven perdeu a audição aos poucos e compôs a Nona Sinfonia, de 1824, já praticamente surdo."},{"id":"9k499y","c":"artes","d":2,"q":"Quem escreveu 'O Pequeno Príncipe'?","o":["Antoine de Saint-Exupéry","Júlio Verne","Hans Christian Andersen","Lewis Carroll"],"e":"Saint-Exupéry era aviador, assim como o narrador do livro, publicado em 1943."},{"id":"1lgopyf","c":"artes","d":2,"q":"Qual pintora brasileira criou o quadro 'Abaporu'?","o":["Tarsila do Amaral","Anita Malfatti","Djanira","Lygia Clark"],"e":"Pintado em 1928, o quadro inspirou o Movimento Antropofágico. O nome vem do tupi: 'homem que come gente'."},{"id":"ql8aju","c":"artes","d":2,"q":"De qual filósofo grego Platão foi discípulo?","o":["Sócrates","Aristóteles","Pitágoras","Heráclito"],"e":"Sócrates não deixou nada escrito; conhecemos suas ideias pelos diálogos de Platão. Aristóteles foi aluno de Platão."},{"id":"16j0vuf","c":"artes","d":2,"q":"Qual personagem de Miguel de Cervantes luta contra moinhos de vento?","o":["Dom Quixote","Sancho Pança","Dom Juan","El Cid"],"e":"Dom Quixote confunde os moinhos com gigantes. Sancho Pança é seu fiel escudeiro, que tenta avisá-lo do engano."},{"id":"xlqjgi","c":"artes","d":3,"q":"Em que cidade ocorreu a Semana de Arte Moderna de 1922?","o":["São Paulo","Rio de Janeiro","Belo Horizonte","Recife"],"e":"O evento aconteceu no Theatro Municipal de São Paulo e marcou o início do Modernismo brasileiro."},{"id":"lxvpnh","c":"artes","d":3,"q":"Quem escreveu o poema épico 'Os Lusíadas'?","o":["Luís de Camões","Fernando Pessoa","Gil Vicente","Eça de Queirós"],"e":"Publicado em 1572, o poema celebra a viagem de Vasco da Gama às Índias e a história de Portugal."},{"id":"1aysu9a","c":"artes","d":3,"q":"Quem pintou 'Guernica', sobre o bombardeio de uma cidade na Guerra Civil Espanhola?","o":["Pablo Picasso","Salvador Dalí","Joan Miró","Francisco de Goya"],"e":"Picasso pintou o painel em 1937, em preto, branco e cinza. Ele está no Museu Reina Sofía, em Madri."},{"id":"17biqk1","c":"artes","d":3,"q":"Quem escreveu 'Grande Sertão: Veredas'?","o":["João Guimarães Rosa","Graciliano Ramos","Jorge Amado","Euclides da Cunha"],"e":"O romance de 1956 é narrado pelo ex-jagunço Riobaldo e é famoso pela linguagem inventiva, cheia de neologismos."},{"id":"44omrl","c":"artes","d":3,"q":"Qual filósofo é o autor da frase 'Penso, logo existo'?","o":["René Descartes","Immanuel Kant","Baruch Espinosa","Blaise Pascal"],"e":"A frase aparece no 'Discurso do Método' (1637): duvidar de tudo prova ao menos que existe alguém que duvida."},{"id":"190ba15","c":"artes","d":3,"q":"Quem compôs o conjunto de concertos 'As Quatro Estações'?","o":["Antonio Vivaldi","Johann Sebastian Bach","Georg Friedrich Händel","Joseph Haydn"],"e":"Vivaldi, compositor barroco de Veneza, publicou em 1725 os quatro concertos para violino, um para cada estação."},{"id":"16d3t4u","c":"artes","d":3,"q":"A qual movimento artístico pertence o pintor Claude Monet?","o":["Impressionismo","Cubismo","Surrealismo","Expressionismo"],"e":"Os impressionistas pintavam ao ar livre para captar a luz do momento, com pinceladas soltas e visíveis."},{"id":"n7afpb","c":"artes","d":3,"q":"Quem esculpiu 'O Pensador'?","o":["Auguste Rodin","Michelangelo","Donatello","Bernini"],"e":"A figura foi criada por Rodin para o conjunto 'A Porta do Inferno', inspirado em Dante, e depois ampliada."},{"id":"1q31uhy","c":"artes","d":3,"q":"Qual romance de Graciliano Ramos narra a fuga de uma família de retirantes com a cachorra Baleia?","o":["Vidas Secas","São Bernardo","Angústia","Caetés"],"e":"Publicado em 1938, o livro acompanha Fabiano, Sinhá Vitória e os filhos fugindo da seca no sertão."},{"id":"am57hx","c":"artes","d":3,"q":"Qual arquiteto catalão projetou a basílica da Sagrada Família, em Barcelona?","o":["Antoni Gaudí","Santiago Calatrava","Le Corbusier","Josep Puig i Cadafalch"],"e":"Gaudí assumiu a obra em 1883 e trabalhou nela até morrer, em 1926. Suas formas se inspiram na natureza."},{"id":"1wiu9pw","c":"artes","d":4,"q":"Qual heterônimo de Fernando Pessoa é o autor de 'O Guardador de Rebanhos'?","o":["Alberto Caeiro","Ricardo Reis","Álvaro de Campos","Bernardo Soares"],"e":"Caeiro é o poeta da natureza e das sensações, considerado o mestre dos outros heterônimos e do próprio Pessoa."},{"id":"1imalgv","c":"artes","d":4,"q":"Quem pintou 'As Meninas', de 1656?","o":["Diego Velázquez","El Greco","Francisco de Goya","Bartolomé Murillo"],"e":"Na tela, Velázquez retrata a si mesmo pintando, ao lado da infanta Margarida. A obra está no Museu do Prado."},{"id":"1yk0g4c","c":"artes","d":4,"q":"Em que cidade mineira ficam os Doze Profetas esculpidos por Aleijadinho?","o":["Congonhas","Ouro Preto","Mariana","Tiradentes"],"e":"As estátuas em pedra-sabão ficam no adro do Santuário do Bom Jesus de Matosinhos, Patrimônio Mundial da UNESCO."},{"id":"1t98h0k","c":"artes","d":4,"q":"Em qual ópera de Mozart aparece a personagem Rainha da Noite?","o":["A Flauta Mágica","Don Giovanni","As Bodas de Fígaro","Così fan tutte"],"e":"A ópera estreou em Viena em 1791, ano da morte de Mozart. A ária da Rainha exige notas agudíssimas da soprano."},{"id":"zx9chr","c":"artes","d":4,"q":"Qual romance de Dostoiévski tem o estudante Raskólnikov como protagonista?","o":["Crime e Castigo","Os Irmãos Karamázov","O Idiota","Os Demônios"],"e":"No romance de 1866, Raskólnikov mata uma velha agiota e é consumido pela culpa até confessar o crime."},{"id":"193bso9","c":"artes","d":4,"q":"Quem projetou a cúpula da catedral de Santa Maria del Fiore, em Florença?","o":["Filippo Brunelleschi","Leon Battista Alberti","Donato Bramante","Giotto di Bondone"],"e":"Brunelleschi ergueu a cúpula no século XV sem cimbre de madeira, usando casca dupla. Giotto projetou o campanário."},{"id":"1fn41vu","c":"artes","d":4,"q":"Qual romance de Aluísio Azevedo, de 1881, é considerado o marco inicial do Naturalismo no Brasil?","o":["O Mulato","O Cortiço","Casa de Pensão","O Coruja"],"e":"O livro denuncia o preconceito racial em São Luís do Maranhão. 'O Cortiço', mais famoso, só saiu em 1890."},{"id":"m1pqwd","c":"artes","d":4,"q":"Qual pintor é o autor do tríptico 'O Jardim das Delícias Terrenas'?","o":["Hieronymus Bosch","Pieter Bruegel, o Velho","Jan van Eyck","Albrecht Dürer"],"e":"O tríptico mostra o Paraíso, os prazeres terrenos e o Inferno, com figuras fantásticas. Está no Museu do Prado."},{"id":"tgzlzv","c":"artes","d":4,"q":"Qual filósofo é o autor de 'Assim Falou Zaratustra'?","o":["Friedrich Nietzsche","Arthur Schopenhauer","Martin Heidegger","Søren Kierkegaard"],"e":"Na obra, Nietzsche apresenta as ideias do além-do-homem e do eterno retorno pela voz do profeta Zaratustra."},{"id":"19zyjqp","c":"artes","d":4,"q":"Qual artista barroco esculpiu 'O Êxtase de Santa Teresa'?","o":["Gian Lorenzo Bernini","Antonio Canova","Benvenuto Cellini","Donatello"],"e":"A escultura em mármore fica na igreja de Santa Maria della Vittoria, em Roma, e é um ícone do Barroco."},{"id":"1wzzqif","c":"artes","d":5,"q":"Em qual teatro estreou a ópera 'Il Guarany', de Carlos Gomes, em 1870?","o":["Teatro alla Scala, em Milão","Teatro La Fenice, em Veneza","Teatro San Carlo, em Nápoles","Teatro Regio, em Turim"],"e":"Baseada no romance de José de Alencar, a ópera foi cantada em italiano e consagrou Carlos Gomes na Europa."},{"id":"ahp4iv","c":"artes","d":5,"q":"Qual filósofo pré-socrático afirmou que o princípio de todas as coisas é o 'ápeiron'?","o":["Anaximandro","Anaxímenes","Tales de Mileto","Heráclito"],"e":"Ápeiron significa o ilimitado ou indeterminado. Para Tales, o princípio era a água; para Anaxímenes, o ar."},{"id":"5jfu9v","c":"artes","d":5,"q":"Qual é o número do Réquiem de Mozart no catálogo Köchel?","o":["K. 626","K. 550","K. 525","K. 620"],"e":"É o último número do catálogo: Mozart morreu sem terminar a obra. K. 620 é 'A Flauta Mágica'."},{"id":"1p5v8n6","c":"artes","d":5,"q":"Qual arquiteto projetou a igreja de San Carlo alle Quattro Fontane, em Roma?","o":["Francesco Borromini","Gian Lorenzo Bernini","Pietro da Cortona","Carlo Maderno"],"e":"A pequena igreja, de fachada ondulada e planta oval, é a obra-prima de Borromini, grande rival de Bernini."},{"id":"wyos67","c":"artes","d":5,"q":"Quem pintou 'O Casal Arnolfini', de 1434?","o":["Jan van Eyck","Rogier van der Weyden","Hans Memling","Robert Campin"],"e":"A tela, na National Gallery de Londres, traz um espelho convexo ao fundo e a assinatura do pintor na parede."},{"id":"1cvfhct","c":"artes","d":5,"q":"Em que ano se passa o único dia narrado em 'Ulisses', de James Joyce?","o":["1904","1914","1922","1900"],"e":"Toda a ação ocorre em Dublin, em 16 de junho de 1904, data hoje festejada como Bloomsday. O livro saiu em 1922."},{"id":"1gyjjgo","c":"artes","d":5,"q":"Como se chama o narrador de 'O Ateneu', de Raul Pompeia?","o":["Sérgio","Aristarco","Bento","Carlos"],"e":"Sérgio relembra, já adulto, sua vida no internato dirigido por Aristarco. O romance é de 1888."},{"id":"7p8fqq","c":"artes","d":5,"q":"Qual escultor fez as 'Portas do Paraíso' do Batistério de Florença?","o":["Lorenzo Ghiberti","Andrea Pisano","Luca della Robbia","Donatello"],"e":"Ghiberti levou 27 anos nos dez painéis de bronze dourado. O apelido das portas é atribuído a Michelangelo."},{"id":"jpqxry","c":"artes","d":5,"q":"Qual obra de Wittgenstein termina com 'Sobre aquilo de que não se pode falar, deve-se calar'?","o":["Tractatus Logico-Philosophicus","Investigações Filosóficas","Da Certeza","O Livro Azul"],"e":"É a sétima e última proposição do Tractatus (1921), único livro de filosofia que ele publicou em vida."},{"id":"1grz29e","c":"artes","d":5,"q":"Qual foi o romance de estreia de Clarice Lispector, publicado em 1943?","o":["Perto do Coração Selvagem","A Paixão Segundo G.H.","A Cidade Sitiada","A Maçã no Escuro"],"e":"O título vem de uma frase de James Joyce. O livro, centrado na personagem Joana, surpreendeu pelo fluxo de consciência."},{"id":"1qmjp3","c":"cultura","d":1,"q":"Quantos jogadores de cada time ficam em campo no início de uma partida de futebol?","o":["Onze","Dez","Nove","Doze"],"e":"São dez jogadores de linha e um goleiro, o único que pode usar as mãos dentro da sua área."},{"id":"1ykan4w","c":"cultura","d":1,"q":"Em qual destes países as pessoas tradicionalmente comem usando hashi, os palitinhos?","o":["Japão","Índia","Egito","Rússia"],"e":"O hashi é usado no Japão e em vizinhos como China e Coreia. Na Índia, é comum comer com a mão direita."},{"id":"ocpb8j","c":"cultura","d":1,"q":"Qual país é famoso por ser a terra da pizza?","o":["Itália","França","Espanha","Grécia"],"e":"A pizza como conhecemos nasceu na cidade de Nápoles, no sul da Itália, e depois se espalhou pelo mundo."},{"id":"1h432t","c":"cultura","d":1,"q":"Na mitologia grega, quem é o rei dos deuses, que lança raios do céu?","o":["Zeus","Poseidon","Hades","Apolo"],"e":"Zeus governava do Monte Olimpo. Seus irmãos Poseidon e Hades reinavam sobre o mar e o mundo dos mortos."},{"id":"1khozkn","c":"cultura","d":1,"q":"Quantas letras tem o alfabeto da língua portuguesa?","o":["26","23","24","28"],"e":"Eram 23 letras até o Acordo Ortográfico incluir oficialmente o K, o W e o Y, somando 26."},{"id":"15o94mq","c":"cultura","d":1,"q":"No desenho 'O Rei Leão', qual é o nome do filhote que se torna rei?","o":["Simba","Mufasa","Scar","Timão"],"e":"Simba é filho do rei Mufasa. Seu nome significa 'leão' em suaíli, língua falada no leste da África."},{"id":"189d3sp","c":"cultura","d":1,"q":"Em qual esporte se usa uma raquete para rebater uma bolinha amarela por cima de uma rede?","o":["Tênis","Vôlei","Basquete","Handebol"],"e":"No tênis, a bola pode quicar só uma vez de cada lado. As partidas são divididas em games e sets."},{"id":"11n7a2m","c":"cultura","d":1,"q":"Além do chocolate, qual é o ingrediente principal do brigadeiro?","o":["Leite condensado","Creme de leite","Doce de leite","Leite de coco"],"e":"O doce brasileiro leva leite condensado, chocolate e manteiga, e é enrolado em bolinhas com granulado."},{"id":"1i98qwk","c":"cultura","d":1,"q":"De quantos em quantos anos acontecem os Jogos Olímpicos de Verão?","o":["Quatro","Dois","Três","Cinco"],"e":"O intervalo de quatro anos entre os Jogos se chama olimpíada, costume herdado da Grécia Antiga."},{"id":"11mx97d","c":"cultura","d":1,"q":"Qual é o plural correto da palavra 'pão'?","o":["Pães","Pãos","Pões","Pãoes"],"e":"Palavras em -ão têm três plurais possíveis: pães, mãos e limões são exemplos de cada um deles."},{"id":"f2ecx5","c":"cultura","d":2,"q":"Qual banda inglesa era formada por John, Paul, George e Ringo?","o":["The Beatles","The Rolling Stones","The Who","The Kinks"],"e":"O quarteto surgiu em Liverpool e se separou em 1970, depois de transformar a música pop dos anos 1960."},{"id":"13mggya","c":"cultura","d":2,"q":"Qual herói grego tinha o calcanhar como único ponto fraco?","o":["Aquiles","Hércules","Ulisses","Perseu"],"e":"Segundo o mito, a mãe o mergulhou no rio Estige segurando-o pelo calcanhar, que ficou vulnerável."},{"id":"pove4e","c":"cultura","d":2,"q":"Qual é o substantivo coletivo de lobos?","o":["Alcateia","Matilha","Manada","Cardume"],"e":"Matilha é o coletivo de cães, manada é de bois ou elefantes, e cardume é de peixes."},{"id":"ymt6g6","c":"cultura","d":2,"q":"O sushi é um prato típico da culinária de qual país?","o":["Japão","China","Tailândia","Vietnã"],"e":"O que define o sushi é o arroz temperado com vinagre. O peixe cru servido sozinho se chama sashimi."},{"id":"1gmmwyn","c":"cultura","d":2,"q":"Em que cidade da Grécia Antiga eram disputados os Jogos Olímpicos?","o":["Olímpia","Atenas","Esparta","Corinto"],"e":"Os jogos homenageavam Zeus no santuário de Olímpia. Atenas sediou a primeira edição moderna, em 1896."},{"id":"t4bwfv","c":"cultura","d":2,"q":"Qual artista do cinema mudo criou o personagem Carlitos, o vagabundo de bigode e bengala?","o":["Charlie Chaplin","Buster Keaton","Harold Lloyd","Stan Laurel"],"e":"Chaplin atuava, dirigia e compunha as trilhas de filmes como 'O Garoto' e 'Tempos Modernos'."},{"id":"13a7tp9","c":"cultura","d":2,"q":"Em qual sílaba fica a tônica de uma palavra proparoxítona?","o":["Antepenúltima","Penúltima","Última","Primeira"],"e":"Todas as proparoxítonas são acentuadas em português, como 'lâmpada', 'médico' e 'pássaro'."},{"id":"vmj10u","c":"cultura","d":2,"q":"Na mitologia romana, quem é o deus da guerra?","o":["Marte","Júpiter","Netuno","Vulcano"],"e":"Marte corresponde ao grego Ares e deu nome ao mês de março e ao planeta vermelho."},{"id":"18ttzcg","c":"cultura","d":2,"q":"Em qual categoria do automobilismo Ayrton Senna foi tricampeão mundial?","o":["Fórmula 1","Fórmula Indy","Rali","Stock Car"],"e":"Senna venceu os campeonatos de 1988, 1990 e 1991, todos pela equipe McLaren."},{"id":"1mg2og7","c":"cultura","d":2,"q":"Em que país o Dia dos Mortos é celebrado com altares coloridos, flores e caveiras de açúcar?","o":["México","Espanha","Peru","Argentina"],"e":"A festa mexicana mistura tradições indígenas e católicas: as famílias recebem com alegria a visita dos antepassados."},{"id":"1kl8av0","c":"cultura","d":3,"q":"De qual língua veio a maior parte do vocabulário do português?","o":["Latim","Grego","Árabe","Tupi"],"e":"O português é uma língua românica: nasceu do latim vulgar falado pelos romanos na Península Ibérica."},{"id":"17oa07f","c":"cultura","d":3,"q":"Qual figura de linguagem consiste em um exagero intencional, como em 'morri de rir'?","o":["Hipérbole","Metáfora","Eufemismo","Metonímia"],"e":"A hipérbole exagera para dar ênfase. O eufemismo faz o contrário: suaviza uma ideia desagradável."},{"id":"2fqmva","c":"cultura","d":3,"q":"Na mitologia grega, quem roubou o fogo dos deuses para entregá-lo aos homens?","o":["Prometeu","Hefesto","Ícaro","Sísifo"],"e":"Como castigo, Zeus o acorrentou a um rochedo, onde uma águia devorava seu fígado todos os dias."},{"id":"9dylam","c":"cultura","d":3,"q":"Quem dirigiu o filme 'Psicose', de 1960?","o":["Alfred Hitchcock","Orson Welles","Stanley Kubrick","Billy Wilder"],"e":"Conhecido como mestre do suspense, Hitchcock criou no filme a célebre cena do assassinato no chuveiro."},{"id":"12rskh1","c":"cultura","d":3,"q":"Qual canção de Tom Jobim e Vinicius de Moraes fala de uma moça que passa a caminho do mar?","o":["Garota de Ipanema","Chega de Saudade","Insensatez","Água de Beber"],"e":"Lançada em 1962, a canção foi inspirada em Helô Pinheiro e virou um dos maiores sucessos mundiais da bossa nova."},{"id":"sr7uma","c":"cultura","d":3,"q":"Em que país o Brasil conquistou sua primeira Copa do Mundo de futebol, em 1958?","o":["Suécia","Chile","Suíça","México"],"e":"O Brasil venceu a anfitriã Suécia por 5 a 2 na final, com dois gols de Pelé, então com 17 anos."},{"id":"1ferjqi","c":"cultura","d":3,"q":"Qual quitute baiano é um bolinho de feijão-fradinho frito no azeite de dendê?","o":["Acarajé","Abará","Vatapá","Caruru"],"e":"De origem africana, o acarajé é comida ritual do candomblé. O abará usa a mesma massa, mas cozida no vapor."},{"id":"1cso4g8","c":"cultura","d":3,"q":"Qual é a distância oficial de uma maratona?","o":["42,195 km","40,000 km","41,195 km","42,500 km"],"e":"A medida foi usada nos Jogos de Londres de 1908 e depois adotada como padrão oficial da prova."},{"id":"17ltmnl","c":"cultura","d":3,"q":"Na mitologia nórdica, como se chama o martelo de Thor?","o":["Mjölnir","Gungnir","Draupnir","Gleipnir"],"e":"Gungnir é a lança de Odin, Draupnir é seu anel de ouro e Gleipnir é a corrente que prende o lobo Fenrir."},{"id":"p2srrt","c":"cultura","d":3,"q":"De qual língua o português herdou palavras como 'alface', 'almofada' e 'açúcar'?","o":["Árabe","Tupi","Grego","Francês"],"e":"Os árabes dominaram parte da Península Ibérica por séculos. O 'al' inicial de muitas palavras é o artigo árabe."},{"id":"1upwk30","c":"cultura","d":4,"q":"Na mitologia grega, qual das nove musas é a protetora da História?","o":["Clio","Calíope","Érato","Tália"],"e":"As musas eram filhas de Zeus e Mnemósine, a Memória. Calíope inspirava a poesia épica e Tália, a comédia."},{"id":"1r8298q","c":"cultura","d":4,"q":"Qual processo de formação de palavras deu origem a 'planalto'?","o":["Composição por aglutinação","Composição por justaposição","Derivação parassintética","Derivação regressiva"],"e":"Na aglutinação, os elementos se fundem e perdem fonemas: plano + alto. Na justaposição ficam intactos, como em 'girassol'."},{"id":"1ysvutv","c":"cultura","d":4,"q":"Quem dirigiu o filme 'Os Sete Samurais', de 1954?","o":["Akira Kurosawa","Yasujiro Ozu","Kenji Mizoguchi","Ishiro Honda"],"e":"O épico de Kurosawa inspirou o faroeste americano 'Sete Homens e um Destino', lançado em 1960."},{"id":"1ny9sjh","c":"cultura","d":4,"q":"Qual brasileiro foi bicampeão olímpico do salto triplo, em 1952 e 1956?","o":["Adhemar Ferreira da Silva","João Carlos de Oliveira","Nelson Prudêncio","José Telles da Conceição"],"e":"Adhemar venceu em Helsinque e em Melbourne. João do Pulo e Nelson Prudêncio também ganharam medalhas na prova."},{"id":"1drh1hr","c":"cultura","d":4,"q":"Qual especiaria é obtida dos estigmas secos de uma flor do gênero Crocus?","o":["Açafrão","Cardamomo","Cúrcuma","Noz-moscada"],"e":"Cada flor dá só três estigmas, colhidos à mão, o que faz do açafrão verdadeiro uma especiaria caríssima."},{"id":"x6xhj7","c":"cultura","d":4,"q":"Qual filme brasileiro ganhou a Palma de Ouro no Festival de Cannes de 1962?","o":["O Pagador de Promessas","Terra em Transe","O Cangaceiro","Deus e o Diabo na Terra do Sol"],"e":"Dirigido por Anselmo Duarte e baseado na peça de Dias Gomes, o filme conta a promessa de Zé do Burro."},{"id":"1h7q6ji","c":"cultura","d":4,"q":"Na mitologia grega, como se chama o rio do esquecimento, no mundo dos mortos?","o":["Lete","Estige","Aqueronte","Cócito"],"e":"Quem bebia do Lete esquecia a vida passada. Os deuses faziam seus juramentos mais solenes pelo Estige."},{"id":"1fo0hw5","c":"cultura","d":4,"q":"Quem compôs 'Asa Branca' em parceria com Humberto Teixeira?","o":["Luiz Gonzaga","Jackson do Pandeiro","Dominguinhos","Zé Dantas"],"e":"Lançada em 1947, a canção sobre a seca e a saudade do sertão tornou-se o hino do baião e do Nordeste."},{"id":"u58w17","c":"cultura","d":4,"q":"De qual língua vem a palavra 'abacaxi'?","o":["Tupi","Quimbundo","Árabe","Quíchua"],"e":"O termo vem do tupi e costuma ser explicado como 'fruta cheirosa'. Em Portugal, a fruta é chamada de ananás."},{"id":"1fugh17","c":"cultura","d":4,"q":"Como se chama a tradicional cerimônia do chá japonesa?","o":["Chanoyu","Ikebana","Hanami","Kabuki"],"e":"Ikebana é a arte dos arranjos florais, hanami é a contemplação das cerejeiras e kabuki é um gênero de teatro."},{"id":"14uvbqr","c":"cultura","d":5,"q":"Qual das três Moiras gregas era a responsável por cortar o fio da vida?","o":["Átropos","Cloto","Láquesis","Nêmesis"],"e":"Cloto fiava o fio da vida, Láquesis media seu comprimento e Átropos, 'a inflexível', o cortava."},{"id":"tp137h","c":"cultura","d":5,"q":"Na mitologia nórdica, como se chama o cavalo de oito patas de Odin?","o":["Sleipnir","Fenrir","Huginn","Gullinbursti"],"e":"Sleipnir é filho de Loki. Fenrir é um lobo gigante, Huginn é um corvo de Odin e Gullinbursti é o javali de Freyr."},{"id":"1wjakds","c":"cultura","d":5,"q":"A passagem do latim 'amare' ao português 'amar' ilustra qual metaplasmo?","o":["Apócope","Síncope","Aférese","Prótese"],"e":"Apócope é a queda de fonema no fim da palavra. Na aférese a queda é no início e, na síncope, no meio."},{"id":"f31h5m","c":"cultura","d":5,"q":"De qual língua vem a palavra 'moleque'?","o":["Quimbundo","Tupi","Árabe","Iorubá"],"e":"Vem do quimbundo 'muleke', menino. Essa língua banta de Angola também nos deu 'caçula' e 'cochilar'."},{"id":"12vhlsf","c":"cultura","d":5,"q":"Quem dirigiu 'Limite', clássico do cinema mudo brasileiro lançado em 1931?","o":["Mário Peixoto","Humberto Mauro","Alberto Cavalcanti","Adhemar Gonzaga"],"e":"Foi o único filme concluído por Mário Peixoto, que o realizou com pouco mais de 20 anos de idade."},{"id":"lkxz6e","c":"cultura","d":5,"q":"Quem escreveu a letra de 'Carinhoso', melodia composta por Pixinguinha?","o":["Braguinha","Noel Rosa","Lamartine Babo","Ary Barroso"],"e":"A melodia é dos anos 1910, mas a letra de Braguinha, o João de Barro, só veio em 1937, na voz de Orlando Silva."},{"id":"illzy1","c":"cultura","d":5,"q":"Quem marcou o gol da vitória do Uruguai sobre o Brasil no jogo decisivo da Copa de 1950?","o":["Alcides Ghiggia","Juan Schiaffino","Obdulio Varela","Óscar Míguez"],"e":"Schiaffino empatou e Ghiggia virou para 2 a 1 no Maracanã, no episódio conhecido como Maracanaço."},{"id":"l4gm97","c":"cultura","d":5,"q":"Qual molho-mãe da cozinha francesa é feito de caldo claro engrossado com roux?","o":["Velouté","Béchamel","Espagnole","Hollandaise"],"e":"O béchamel usa leite no lugar do caldo, e o espagnole, caldo escuro. Roux é farinha cozida na manteiga."},{"id":"1k3jbmc","c":"cultura","d":5,"q":"Como se chama o ano-novo persa, celebrado no equinócio de março?","o":["Nowruz","Yalda","Mehregan","Tirgan"],"e":"Nowruz significa 'novo dia' e marca o início da primavera no hemisfério norte. Yalda festeja o solstício de inverno."},{"id":"1el2gex","c":"cultura","d":5,"q":"Na mitologia egípcia, o coração do morto era pesado contra a pena de qual deusa?","o":["Maat","Ísis","Néftis","Hátor"],"e":"Maat personificava a verdade e a justiça. Se o coração pesasse mais que a pena, era devorado pelo monstro Ammit."}];</script>
+<script>/* Sinapse — geradores de exercícios de matemática (7 níveis).
+   Cada gerador devolve { p: enunciado, x: expressão em HTML (opcional),
+   a: resposta inteira  OU  o: [correta, errada, errada, errada], e: explicação }. */
+(function (root) {
+  'use strict';
+
+  function mulberry32(seed) {
+    let a = seed >>> 0;
+    return function () {
+      a = (a + 0x6D2B79F5) >>> 0;
+      let t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function helpers(rng) {
+    const int = (a, b) => a + Math.floor(rng() * (b - a + 1));
+    const pick = (arr) => arr[Math.floor(rng() * arr.length)];
+    const nz = (a, b) => { let v; do { v = int(a, b); } while (v === 0); return v; };
+    const shuffle = (arr) => {
+      const c = arr.slice();
+      for (let i = c.length - 1; i > 0; i--) {
+        const j = Math.floor(rng() * (i + 1));
+        [c[i], c[j]] = [c[j], c[i]];
+      }
+      return c;
+    };
+    return { int, pick, nz, shuffle, rng };
+  }
+
+  // ---------- formatação ----------
+  const M = '−'; // sinal de menos tipográfico
+  const n = (v) => (v < 0 ? M + Math.abs(v) : String(v));
+  const par = (v) => (v < 0 ? '(' + n(v) + ')' : String(v));
+  const sup = (v) => '<sup>' + v + '</sup>';
+  const sub = (v) => '<sub>' + v + '</sub>';
+  const pm = (v) => (v < 0 ? ' ' + M + ' ' : ' + ') + Math.abs(v);
+
+  function poly(terms, x) {
+    x = x || 'x';
+    let out = '';
+    terms.filter((t) => t[0] !== 0).forEach(function (t, i) {
+      const c = t[0], e = t[1], a = Math.abs(c);
+      const body = e === 0 ? String(a) : (a === 1 ? '' : a) + x + (e === 1 ? '' : sup(e));
+      out += i === 0 ? (c < 0 ? M : '') + body : (c < 0 ? ' ' + M + ' ' : ' + ') + body;
+    });
+    return out || '0';
+  }
+  const lin = (a, b) => poly([[a, 1], [b, 0]]);
+
+  function gcd(a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { [a, b] = [b, a % b]; } return a; }
+  function frac(p, q) {
+    if (q < 0) { p = -p; q = -q; }
+    const g = gcd(p, q) || 1;
+    p /= g; q /= g;
+    return q === 1 ? n(p) : n(p) + '/' + q;
+  }
+  function fact(k) { let r = 1; for (let i = 2; i <= k; i++) r *= i; return r; }
+  function comb(nn, k) { let r = 1; for (let i = 1; i <= k; i++) r = (r * (nn - k + i)) / i; return Math.round(r); }
+  function modpow(a, b, m) { let r = 1; a %= m; while (b > 0) { if (b & 1) r = (r * a) % m; a = (a * a) % m; b >>= 1; } return r; }
+  function phi(v) { let r = 0; for (let i = 1; i <= v; i++) if (gcd(i, v) === 1) r++; return r; }
+
+  function options(correct, wrongs) {
+    const seen = new Set([String(correct)]);
+    const o = [String(correct)];
+    for (const w of wrongs) {
+      const s = String(w);
+      if (!seen.has(s)) { seen.add(s); o.push(s); }
+      if (o.length === 4) break;
+    }
+    return o;
+  }
+  function matrix(rows) {
+    const cells = rows.map((r) => r.map((v) => '<i>' + n(v) + '</i>').join('')).join('');
+    return '<span class="mx" style="--n:' + rows.length + '">' + cells + '</span>';
+  }
+  const integral = (lo, hi, body) =>
+    '<span class="int">∫<span class="lims"><sup>' + n(hi) + '</sup><sub>' + n(lo) + '</sub></span></span> ' + body + ' dx';
+  const limit = (to, body) => 'lim' + sub('x→' + to) + ' ' + body;
+  const cplx = (a, b) => n(a) + (b < 0 ? ' ' + M + ' ' : ' + ') + (Math.abs(b) === 1 ? '' : Math.abs(b)) + 'i';
+
+  const LEVELS = ['Iniciante', 'Básico', 'Intermediário', 'Avançado', 'Especialista', 'Mestre', 'Lendário'];
+  const SKILLS = {
+    aritmetica: 'Aritmética',
+    fracoes: 'Frações e porcentagem',
+    algebra: 'Álgebra',
+    geometria: 'Geometria e trigonometria',
+    funcoes: 'Funções e sequências',
+    contagem: 'Contagem e probabilidade',
+    calculo: 'Cálculo',
+    numeros: 'Teoria dos números',
+    linear: 'Matrizes e complexos'
+  };
+  const TRIPLES = [[3, 4, 5], [5, 12, 13], [8, 15, 17], [7, 24, 25], [20, 21, 29]];
+
+  const G = [];
+  const add = (id, L, s, t, fast, g) => G.push({ id, L, s, t, fast, g });
+
+  // ================= NÍVEL 1 — Iniciante =================
+  add('soma1', 1, 'aritmetica', 'Soma até 20', true, (r) => {
+    const a = r.int(1, 10), b = r.int(1, 10);
+    return { p: 'Quanto é?', x: a + ' + ' + b, a: a + b, e: a + ' + ' + b + ' = ' + (a + b) + '.' };
+  });
+  add('sub1', 1, 'aritmetica', 'Subtração até 20', true, (r) => {
+    const a = r.int(5, 20), b = r.int(1, a - 1);
+    return { p: 'Quanto é?', x: a + ' ' + M + ' ' + b, a: a - b, e: a + ' ' + M + ' ' + b + ' = ' + (a - b) + '.' };
+  });
+  add('falta1', 1, 'algebra', 'Número que falta', true, (r) => {
+    const a = r.int(1, 10), b = r.int(1, 10);
+    return { p: 'Qual número completa a conta?', x: a + ' + ? = ' + (a + b), a: b, e: (a + b) + ' ' + M + ' ' + a + ' = ' + b + '.' };
+  });
+  add('dobro1', 1, 'aritmetica', 'Dobro e metade', true, (r) => {
+    const v = r.int(2, 20);
+    return r.rng() < 0.5
+      ? { p: 'Qual é o dobro de ' + v + '?', a: 2 * v, e: 'Dobro é somar o número com ele mesmo: ' + v + ' + ' + v + ' = ' + 2 * v + '.' }
+      : { p: 'Qual é a metade de ' + 2 * v + '?', a: v, e: v + ' + ' + v + ' = ' + 2 * v + ', então a metade é ' + v + '.' };
+  });
+  add('seq1', 1, 'funcoes', 'Sequências simples', false, (r) => {
+    const s = r.int(1, 9), k = r.int(2, 5);
+    const t = [0, 1, 2, 3].map((i) => s + i * k);
+    return { p: 'Qual é o próximo número da sequência?', x: t.join(', ') + ', ?', a: s + 4 * k, e: 'A sequência soma ' + k + ' a cada passo: ' + t[3] + ' + ' + k + ' = ' + (s + 4 * k) + '.' };
+  });
+
+  // ================= NÍVEL 2 — Básico =================
+  add('soma2', 2, 'aritmetica', 'Soma com dezenas', true, (r) => {
+    const a = r.int(12, 99), b = r.int(12, 99);
+    return { p: 'Quanto é?', x: a + ' + ' + b, a: a + b, e: a + ' + ' + b + ' = ' + (a + b) + '.' };
+  });
+  add('sub2', 2, 'aritmetica', 'Subtração com dezenas', true, (r) => {
+    const a = r.int(30, 150), b = r.int(11, a - 1);
+    return { p: 'Quanto é?', x: a + ' ' + M + ' ' + b, a: a - b, e: a + ' ' + M + ' ' + b + ' = ' + (a - b) + '.' };
+  });
+  add('mult2', 2, 'aritmetica', 'Tabuada', true, (r) => {
+    const a = r.int(2, 10), b = r.int(2, 10);
+    return { p: 'Quanto é?', x: a + ' × ' + b, a: a * b, e: a + ' × ' + b + ' = ' + a * b + '.' };
+  });
+  add('div2', 2, 'aritmetica', 'Divisão exata', true, (r) => {
+    const b = r.int(2, 10), q = r.int(2, 12);
+    return { p: 'Quanto é?', x: b * q + ' ÷ ' + b, a: q, e: b + ' × ' + q + ' = ' + b * q + ', então ' + b * q + ' ÷ ' + b + ' = ' + q + '.' };
+  });
+  add('mult2b', 2, 'aritmetica', 'Multiplicação por um dígito', true, (r) => {
+    let a; do { a = r.int(11, 29); } while (a % 10 === 0);
+    const b = r.int(2, 9);
+    const d = Math.floor(a / 10) * 10, u = a % 10;
+    return { p: 'Quanto é?', x: a + ' × ' + b, a: a * b, e: 'Separe em ' + d + ' × ' + b + ' + ' + u + ' × ' + b + ' = ' + d * b + ' + ' + u * b + ' = ' + a * b + '.' };
+  });
+  add('ret2', 2, 'geometria', 'Área e perímetro', false, (r) => {
+    const a = r.int(3, 12), b = r.int(2, 9);
+    return r.rng() < 0.5
+      ? { p: 'Um retângulo tem lados de ' + a + ' cm e ' + b + ' cm. Qual é a área, em cm²?', a: a * b, e: 'Área do retângulo = base × altura = ' + a + ' × ' + b + ' = ' + a * b + ' cm².' }
+      : { p: 'Um retângulo tem lados de ' + a + ' cm e ' + b + ' cm. Qual é o perímetro, em cm?', a: 2 * (a + b), e: 'Perímetro = 2 × (' + a + ' + ' + b + ') = ' + 2 * (a + b) + ' cm.' };
+  });
+
+  // ================= NÍVEL 3 — Intermediário =================
+  add('ordem3', 3, 'aritmetica', 'Ordem das operações', true, (r) => {
+    const a = r.int(2, 20), b = r.int(2, 9), c = r.int(2, 9), d = r.int(1, 10);
+    const ans = a + b * c - d;
+    return { p: 'Quanto é?', x: a + ' + ' + b + ' × ' + c + ' ' + M + ' ' + d, a: ans, e: 'Primeiro a multiplicação: ' + b + ' × ' + c + ' = ' + b * c + '. Depois ' + a + ' + ' + b * c + ' ' + M + ' ' + d + ' = ' + n(ans) + '.' };
+  });
+  add('neg3', 3, 'aritmetica', 'Números negativos', true, (r) => {
+    const a = r.int(2, 15), b = r.int(2, 12), c = r.int(2, 15);
+    const v = r.int(0, 3);
+    if (v === 0) return { p: 'Quanto é?', x: M + a + ' + ' + b + ' ' + M + ' ' + c, a: -a + b - c, e: M + a + ' + ' + b + ' = ' + n(b - a) + '; depois ' + n(b - a) + ' ' + M + ' ' + c + ' = ' + n(b - a - c) + '.' };
+    if (v === 1) return { p: 'Quanto é?', x: '(' + M + a + ') × ' + b, a: -a * b, e: 'Sinais diferentes dão resultado negativo: ' + n(-a * b) + '.' };
+    if (v === 2) return { p: 'Quanto é?', x: '(' + M + a + ') × (' + M + b + ')', a: a * b, e: 'Sinais iguais dão resultado positivo: ' + a * b + '.' };
+    return { p: 'Quanto é?', x: a + ' ' + M + ' (' + M + b + ')', a: a + b, e: 'Subtrair um negativo é somar: ' + a + ' + ' + b + ' = ' + (a + b) + '.' };
+  });
+  add('frac3', 3, 'fracoes', 'Fração de uma quantidade', true, (r) => {
+    const d = r.int(2, 8), nu = r.int(1, d - 1), k = r.int(2, 12);
+    return { p: 'Quanto é ' + nu + '/' + d + ' de ' + d * k + '?', a: nu * k, e: d * k + ' ÷ ' + d + ' = ' + k + '; vezes ' + nu + ' dá ' + nu * k + '.' };
+  });
+  add('perc3', 3, 'fracoes', 'Porcentagem', true, (r) => {
+    const p = r.pick([5, 10, 15, 20, 25, 30, 40, 50, 75]), v = 20 * r.int(1, 20);
+    return { p: 'Quanto é ' + p + '% de ' + v + '?', a: (p * v) / 100, e: p + '% = ' + p + '/100. ' + v + ' × ' + p + ' ÷ 100 = ' + (p * v) / 100 + '.' };
+  });
+  add('pot3', 3, 'aritmetica', 'Potências', true, (r) => {
+    const v = r.int(0, 2);
+    if (v === 0) { const a = r.int(4, 15); return { p: 'Quanto é?', x: a + sup(2), a: a * a, e: a + ' × ' + a + ' = ' + a * a + '.' }; }
+    if (v === 1) { const a = r.int(2, 6); return { p: 'Quanto é?', x: a + sup(3), a: a * a * a, e: a + ' × ' + a + ' × ' + a + ' = ' + a * a * a + '.' }; }
+    const e = r.int(4, 10);
+    return { p: 'Quanto é?', x: '2' + sup(e), a: Math.pow(2, e), e: 'Dobrando ' + e + ' vezes a partir de 1: ' + Math.pow(2, e) + '.' };
+  });
+  add('raiz3', 3, 'aritmetica', 'Raiz quadrada', true, (r) => {
+    const k = r.int(4, 20);
+    return { p: 'Quanto é?', x: '√' + k * k, a: k, e: k + ' × ' + k + ' = ' + k * k + ', então √' + k * k + ' = ' + k + '.' };
+  });
+  add('media3', 3, 'aritmetica', 'Média aritmética', false, (r) => {
+    const m = r.int(10, 40), d = [r.int(-3, 3), r.int(-3, 3), r.int(-3, 3)];
+    d.push(-(d[0] + d[1] + d[2]));
+    const v = d.map((x) => m + x);
+    return { p: 'Qual é a média aritmética de ' + v.slice(0, 3).join(', ') + ' e ' + v[3] + '?', a: m, e: 'Soma = ' + 4 * m + '; dividida por 4 dá ' + m + '.' };
+  });
+  add('tri3', 3, 'geometria', 'Triângulos', false, (r) => {
+    if (r.rng() < 0.5) {
+      const b = 2 * r.int(2, 10), h = r.int(3, 12);
+      return { p: 'Um triângulo tem base ' + b + ' cm e altura ' + h + ' cm. Qual é a área, em cm²?', a: (b * h) / 2, e: 'Área = base × altura ÷ 2 = ' + b + ' × ' + h + ' ÷ 2 = ' + (b * h) / 2 + ' cm².' };
+    }
+    const a = r.int(30, 80), b = r.int(20, 150 - a);
+    return { p: 'Dois ângulos de um triângulo medem ' + a + '° e ' + b + '°. Quanto mede o terceiro, em graus?', a: 180 - a - b, e: 'Os ângulos internos somam 180°: 180 ' + M + ' ' + a + ' ' + M + ' ' + b + ' = ' + (180 - a - b) + '°.' };
+  });
+
+  // ================= NÍVEL 4 — Avançado =================
+  add('eq4', 4, 'algebra', 'Equação do 1º grau', true, (r) => {
+    const a = r.int(2, 9), x = r.nz(-9, 12), b = r.nz(-20, 20), c = a * x + b;
+    return { p: 'Resolva. Quanto vale x?', x: lin(a, b) + ' = ' + n(c), a: x, e: a + 'x = ' + n(c) + (b < 0 ? ' + ' : ' ' + M + ' ') + Math.abs(b) + ' = ' + n(c - b) + ', então x = ' + n(x) + '.' };
+  });
+  add('eq4b', 4, 'algebra', 'Equação com x dos dois lados', false, (r) => {
+    const a = r.int(4, 9), c = r.int(1, a - 2), x = r.nz(-8, 10), b = r.nz(-15, 15), d = (a - c) * x + b;
+    return { p: 'Resolva. Quanto vale x?', x: lin(a, b) + ' = ' + lin(c, d), a: x, e: 'Juntando os termos: ' + (a - c) + 'x = ' + n(d - b) + ', então x = ' + n(x) + '.' };
+  });
+  add('prop4', 4, 'fracoes', 'Regra de três', false, (r) => {
+    const u = r.int(2, 15), n1 = r.int(2, 9);
+    let n2; do { n2 = r.int(3, 15); } while (n2 === n1);
+    return { p: 'Se ' + n1 + ' ingressos custam R$ ' + u * n1 + ', quanto custam ' + n2 + ' ingressos, em reais?', a: u * n2, e: 'Cada ingresso custa ' + u * n1 + ' ÷ ' + n1 + ' = R$ ' + u + '. Então ' + n2 + ' × ' + u + ' = R$ ' + u * n2 + '.' };
+  });
+  add('mmc4', 4, 'numeros', 'MMC e MDC', false, (r) => {
+    const g = r.int(2, 6);
+    let m, k; do { m = r.int(2, 7); k = r.int(2, 7); } while (m === k || gcd(m, k) !== 1);
+    const a = g * m, b = g * k;
+    return r.rng() < 0.5
+      ? { p: 'Qual é o MMC de ' + a + ' e ' + b + '?', a: g * m * k, e: 'MDC = ' + g + '. MMC = ' + a + ' × ' + b + ' ÷ ' + g + ' = ' + g * m * k + '.' }
+      : { p: 'Qual é o MDC de ' + a + ' e ' + b + '?', a: g, e: a + ' = ' + g + ' × ' + m + ' e ' + b + ' = ' + g + ' × ' + k + '; ' + m + ' e ' + k + ' não têm fator comum.' };
+  });
+  add('pit4', 4, 'geometria', 'Teorema de Pitágoras', false, (r) => {
+    const t = r.pick(TRIPLES), k = r.int(1, 3), a = t[0] * k, b = t[1] * k, c = t[2] * k;
+    return r.rng() < 0.6
+      ? { p: 'Os catetos de um triângulo retângulo medem ' + a + ' e ' + b + '. Quanto mede a hipotenusa?', a: c, e: a + '² + ' + b + '² = ' + (a * a + b * b) + ' = ' + c + '².' }
+      : { p: 'A hipotenusa de um triângulo retângulo mede ' + c + ' e um cateto mede ' + a + '. Quanto mede o outro cateto?', a: b, e: c + '² ' + M + ' ' + a + '² = ' + (c * c - a * a) + ' = ' + b + '².' };
+  });
+  add('sist4', 4, 'algebra', 'Sistema de equações', false, (r) => {
+    const x = r.int(-5, 15), y = r.int(-5, 15);
+    return { p: 'No sistema abaixo, quanto vale x?', x: 'x + y = ' + n(x + y) + '<br>x ' + M + ' y = ' + n(x - y), a: x, e: 'Somando as duas equações: 2x = ' + n(2 * x) + ', então x = ' + n(x) + ' (e y = ' + n(y) + ').' };
+  });
+  add('fsoma4', 4, 'fracoes', 'Soma de frações', false, (r) => {
+    let b, d; do { b = r.int(2, 8); d = r.int(2, 8); } while (b === d);
+    const a = r.int(1, b - 1), c = r.int(1, d - 1), num = a * d + c * b, den = b * d;
+    return {
+      p: 'Quanto é? Dê a resposta simplificada.', x: a + '/' + b + ' + ' + c + '/' + d,
+      o: options(frac(num, den), [frac(a + c, b + d), frac(a * c, den), frac(a + c, den), frac(num, b + d), frac(num + 1, den), frac(num - 1, den), frac(num + 2, den)]),
+      e: 'Denominador comum ' + den + ': ' + a * d + '/' + den + ' + ' + c * b + '/' + den + ' = ' + num + '/' + den + (frac(num, den) !== num + '/' + den ? ' = ' + frac(num, den) : '') + '.'
+    };
+  });
+  add('pvar4', 4, 'fracoes', 'Aumentos e descontos', false, (r) => {
+    const P = 20 * r.int(2, 40), p = r.pick([5, 10, 15, 20, 25, 30, 40, 50]), up = r.rng() < 0.5;
+    const delta = (P * p) / 100, ans = up ? P + delta : P - delta;
+    return { p: 'Um produto de R$ ' + P + ' teve ' + (up ? 'aumento' : 'desconto') + ' de ' + p + '%. Qual é o novo preço, em reais?', a: ans, e: p + '% de ' + P + ' = ' + delta + '. ' + P + (up ? ' + ' : ' ' + M + ' ') + delta + ' = ' + ans + '.' };
+  });
+
+  // ================= NÍVEL 5 — Especialista =================
+  add('quad5', 5, 'algebra', 'Equação do 2º grau', false, (r) => {
+    let r1, r2; do { r1 = r.nz(-9, 9); r2 = r.nz(-9, 9); } while (r1 === r2);
+    const S = r1 + r2, P = r1 * r2, lo = Math.min(r1, r2), hi = Math.max(r1, r2);
+    return { p: 'Qual é a maior raiz da equação?', x: poly([[1, 2], [-S, 1], [P, 0]]) + ' = 0', a: hi, e: 'As raízes somam ' + n(S) + ' e têm produto ' + n(P) + ': são ' + n(lo) + ' e ' + n(hi) + '.' };
+  });
+  add('log5', 5, 'funcoes', 'Logaritmos', true, (r) => {
+    const b = r.pick([2, 3, 5, 10]);
+    const k = b === 2 ? r.int(3, 10) : b === 3 ? r.int(2, 5) : b === 5 ? r.int(2, 4) : r.int(2, 6);
+    return { p: 'Quanto vale?', x: 'log' + sub(b) + ' ' + Math.pow(b, k), a: k, e: b + sup(k) + ' = ' + Math.pow(b, k) + ', então o logaritmo é ' + k + '.' };
+  });
+  add('pa5', 5, 'funcoes', 'Progressão aritmética', false, (r) => {
+    const a1 = r.int(-10, 20), q = r.nz(-6, 9);
+    if (r.rng() < 0.5) {
+      const k = r.int(8, 30);
+      return { p: 'Numa PA de primeiro termo ' + n(a1) + ' e razão ' + n(q) + ', qual é o ' + k + 'º termo?', a: a1 + (k - 1) * q, e: 'aₙ = a₁ + (n ' + M + ' 1)·r = ' + n(a1) + ' + ' + (k - 1) + ' × ' + par(q) + ' = ' + n(a1 + (k - 1) * q) + '.' };
+    }
+    const k = r.int(5, 20), last = a1 + (k - 1) * q;
+    return { p: 'Numa PA de primeiro termo ' + n(a1) + ' e razão ' + n(q) + ', qual é a soma dos ' + k + ' primeiros termos?', a: (k * (a1 + last)) / 2, e: 'O ' + k + 'º termo é ' + n(last) + '. Soma = ' + k + ' × (' + n(a1) + ' + ' + par(last) + ') ÷ 2 = ' + n((k * (a1 + last)) / 2) + '.' };
+  });
+  add('pg5', 5, 'funcoes', 'Progressão geométrica', false, (r) => {
+    const a1 = r.int(1, 5), q = r.pick([2, 3, -2]), k = r.int(4, 8), ans = a1 * Math.pow(q, k - 1);
+    return { p: 'Numa PG de primeiro termo ' + a1 + ' e razão ' + n(q) + ', qual é o ' + k + 'º termo?', a: ans, e: 'aₙ = a₁ · q' + sup('n' + M + '1') + ' = ' + a1 + ' × ' + par(q) + sup(k - 1) + ' = ' + n(ans) + '.' };
+  });
+  add('comb5', 5, 'contagem', 'Combinações e anagramas', false, (r) => {
+    if (r.rng() < 0.5) {
+      const k = r.int(2, 4), nn = r.int(k + 2, 10);
+      return { p: 'De quantas maneiras se pode formar uma comissão de ' + k + ' pessoas escolhidas entre ' + nn + '?', a: comb(nn, k), e: 'A ordem não importa: C(' + nn + ', ' + k + ') = ' + nn + '! ÷ (' + k + '! × ' + (nn - k) + '!) = ' + comb(nn, k) + '.' };
+    }
+    const w = r.pick(['AMOR', 'LIVRO', 'ESCOLA', 'CASA', 'ARARA', 'BANANA', 'PORTA', 'MACACO', 'TERRA', 'NUMERO']);
+    const cnt = {}; for (const ch of w) cnt[ch] = (cnt[ch] || 0) + 1;
+    const reps = Object.keys(cnt).filter((c) => cnt[c] > 1);
+    let ans = fact(w.length); reps.forEach((c) => { ans /= fact(cnt[c]); });
+    return { p: 'Quantos anagramas tem a palavra ' + w + '?', a: ans, e: reps.length ? w.length + '! dividido pelas repetições (' + reps.map((c) => c + ' aparece ' + cnt[c] + '×').join(', ') + ') = ' + ans + '.' : 'As ' + w.length + ' letras são diferentes: ' + w.length + '! = ' + ans + '.' };
+  });
+  add('fun5', 5, 'funcoes', 'Função quadrática', false, (r) => {
+    if (r.rng() < 0.5) {
+      const a = r.nz(-3, 4), b = r.int(-6, 6), c = r.int(-9, 9), k = r.nz(-4, 5), ans = a * k * k + b * k + c;
+      return { p: 'Calcule f(' + n(k) + ').', x: 'f(x) = ' + poly([[a, 2], [b, 1], [c, 0]]), a: ans, e: 'f(' + n(k) + ') = ' + par(a) + ' × ' + k * k + pm(b * k) + pm(c) + ' = ' + n(ans) + '.' };
+    }
+    const h = r.nz(-6, 6), kk = r.int(-9, 12);
+    return { p: 'Qual é o valor mínimo da função?', x: 'f(x) = ' + poly([[1, 2], [-2 * h, 1], [h * h + kk, 0]]), a: kk, e: 'Completando o quadrado: f(x) = (x' + pm(-h) + ')² ' + (kk < 0 ? M : '+') + ' ' + Math.abs(kk) + '. O mínimo ocorre em x = ' + n(h) + ' e vale ' + n(kk) + '.' };
+  });
+  add('trig5', 5, 'geometria', 'Ângulos notáveis', false, (r) => {
+    const T = {
+      sen: { 0: '0', 30: '1/2', 45: '√2/2', 60: '√3/2', 90: '1' },
+      cos: { 0: '1', 30: '√3/2', 45: '√2/2', 60: '1/2', 90: '0' },
+      tg: { 0: '0', 30: '√3/3', 45: '1', 60: '√3' }
+    };
+    const f = r.pick(['sen', 'cos', 'tg']), ang = Number(r.pick(Object.keys(T[f]))), ok = T[f][ang];
+    return { p: 'Quanto vale?', x: f + ' ' + ang + '°', o: options(ok, r.shuffle(['0', '1/2', '√2/2', '√3/2', '1', '√3/3', '√3'])), e: 'Valor notável: ' + f + ' ' + ang + '° = ' + ok + '.' };
+  });
+  add('exp5', 5, 'algebra', 'Equação exponencial', true, (r) => {
+    const b = r.pick([2, 3, 5]), k = b === 2 ? r.int(3, 10) : b === 3 ? r.int(2, 5) : r.int(2, 4);
+    if (r.rng() < 0.5) return { p: 'Resolva. Quanto vale x?', x: b + sup('x') + ' = ' + Math.pow(b, k), a: k, e: Math.pow(b, k) + ' = ' + b + sup(k) + ', então x = ' + k + '.' };
+    const c = r.nz(-3, 3);
+    return { p: 'Resolva. Quanto vale x?', x: b + sup('x' + pm(c)) + ' = ' + Math.pow(b, k), a: k - c, e: Math.pow(b, k) + ' = ' + b + sup(k) + ', então x' + pm(c) + ' = ' + k + ' e x = ' + n(k - c) + '.' };
+  });
+  add('prob5', 5, 'contagem', 'Probabilidade', false, (r) => {
+    const s = r.int(2, 12), c = 6 - Math.abs(7 - s);
+    const others = r.shuffle([1, 2, 3, 4, 5, 6].map((v) => frac(v, 36))).concat(['1/11', '1/8']);
+    return { p: 'Lançando dois dados comuns, qual é a probabilidade de a soma ser ' + s + '?', o: options(frac(c, 36), others), e: 'Há ' + c + ' resultado' + (c > 1 ? 's' : '') + ' favoráve' + (c > 1 ? 'is' : 'l') + ' entre 36 possíveis: ' + c + '/36' + (frac(c, 36) !== c + '/36' ? ' = ' + frac(c, 36) : '') + '.' };
+  });
+
+  // ================= NÍVEL 6 — Mestre =================
+  add('der6', 6, 'calculo', 'Derivada de polinômio', false, (r) => {
+    const a = r.int(1, 4), b = r.int(-5, 5), c = r.int(-9, 9), d = r.int(-9, 9), k = r.int(-2, 3);
+    const ans = 3 * a * k * k + 2 * b * k + c;
+    return { p: 'Calcule f′(' + n(k) + ').', x: 'f(x) = ' + poly([[a, 3], [b, 2], [c, 1], [d, 0]]), a: ans, e: 'f′(x) = ' + poly([[3 * a, 2], [2 * b, 1], [c, 0]]) + '. Em x = ' + n(k) + ': ' + n(ans) + '.' };
+  });
+  add('int6', 6, 'calculo', 'Integral definida', false, (r) => {
+    if (r.rng() < 0.6) {
+      const a = r.int(1, 5), b = r.int(-4, 6), k = r.int(1, 5), ans = a * k * k + b * k;
+      return { p: 'Calcule a integral.', x: integral(0, k, '(' + lin(2 * a, b) + ')'), a: ans, e: 'Primitiva: ' + poly([[a, 2], [b, 1]]) + '. Avaliando de 0 a ' + k + ': ' + n(ans) + '.' };
+    }
+    const a = r.int(1, 4), k = r.int(1, 4);
+    return { p: 'Calcule a integral.', x: integral(0, k, 3 * a + 'x' + sup(2)), a: a * k * k * k, e: 'Primitiva: ' + poly([[a, 3]]) + '. Avaliando de 0 a ' + k + ': ' + a * k * k * k + '.' };
+  });
+  add('lim6', 6, 'calculo', 'Limites', false, (r) => {
+    if (r.rng() < 0.5) {
+      const a = r.int(2, 12);
+      return { p: 'Calcule o limite.', x: limit(a, '(x' + sup(2) + ' ' + M + ' ' + a * a + ') / (x ' + M + ' ' + a + ')'), a: 2 * a, e: 'Fatorando: x² ' + M + ' ' + a * a + ' = (x ' + M + ' ' + a + ')(x + ' + a + '). Simplificando, sobra x + ' + a + ' → ' + 2 * a + '.' };
+    }
+    const b = r.int(1, 4), q = r.int(2, 6), c = r.nz(-9, 9), d = r.nz(-9, 9);
+    return { p: 'Calcule o limite.', x: limit('∞', '(' + poly([[b * q, 2], [c, 1], [d, 0]]) + ') / (' + poly([[b, 2], [d, 0]]) + ')'), a: q, e: 'Graus iguais: o limite é a razão dos coeficientes líderes, ' + b * q + ' ÷ ' + b + ' = ' + q + '.' };
+  });
+  add('det6', 6, 'linear', 'Determinante 2×2', false, (r) => {
+    const a = r.int(-6, 9), b = r.int(-6, 9), c = r.int(-6, 9), d = r.int(-6, 9);
+    return { p: 'Calcule o determinante.', x: matrix([[a, b], [c, d]]), a: a * d - b * c, e: 'ad ' + M + ' bc = ' + par(a) + ' × ' + par(d) + ' ' + M + ' ' + par(b) + ' × ' + par(c) + ' = ' + n(a * d - b * c) + '.' };
+  });
+  add('mod6', 6, 'numeros', 'Aritmética modular', false, (r) => {
+    const m = r.pick([5, 7, 11, 13]);
+    let a; do { a = r.int(2, 9); } while (a % m === 0);
+    const b = r.int(11, 60), ans = modpow(a, b, m), q = Math.floor(b / (m - 1)), rest = b % (m - 1);
+    return { p: 'Qual é o resto da divisão por ' + m + '?', x: a + sup(b), a: ans, e: 'Por Fermat, ' + a + sup(m - 1) + ' ≡ 1 (mod ' + m + '). Como ' + b + ' = ' + (m - 1) + ' × ' + q + ' + ' + rest + ', sobra ' + a + sup(rest) + ' ≡ ' + ans + '.' };
+  });
+  add('cplx6', 6, 'linear', 'Números complexos', false, (r) => {
+    if (r.rng() < 0.4) {
+      const t = r.pick([[3, 4, 5], [5, 12, 13], [8, 15, 17], [6, 8, 10]]), sa = r.pick([1, -1]), sb = r.pick([1, -1]);
+      return { p: 'Qual é o módulo do número complexo?', x: 'z = ' + cplx(sa * t[0], sb * t[1]), a: t[2], e: '|z| = √(' + t[0] + '² + ' + t[1] + '²) = √' + t[2] * t[2] + ' = ' + t[2] + '.' };
+    }
+    const a = r.nz(-5, 6), b = r.nz(-5, 6), c = r.nz(-5, 6), d = r.nz(-5, 6);
+    return { p: 'Qual é a parte real do produto?', x: '(' + cplx(a, b) + ')(' + cplx(c, d) + ')', a: a * c - b * d, e: 'Como i² = ' + M + '1, a parte real é ac ' + M + ' bd = ' + n(a * c) + ' ' + M + ' ' + par(b * d) + ' = ' + n(a * c - b * d) + '.' };
+  });
+  add('pginf6', 6, 'funcoes', 'Soma de PG infinita', false, (r) => {
+    const q = r.pick([2, 3, 4, 5]), a = (q - 1) * r.int(1, 8), ans = (a * q) / (q - 1);
+    return { p: 'Qual é a soma da PG infinita de primeiro termo ' + a + ' e razão 1/' + q + '?', a: ans, e: 'S = a₁ ÷ (1 ' + M + ' q) = ' + a + ' ÷ (' + (q - 1) + '/' + q + ') = ' + ans + '.' };
+  });
+  add('binom6', 6, 'contagem', 'Binômio de Newton', false, (r) => {
+    const nn = r.int(4, 6), k = r.int(1, nn - 1), a = r.int(2, 3), ans = comb(nn, k) * Math.pow(a, nn - k);
+    return { p: 'Qual é o coeficiente de x' + sup(k) + ' no desenvolvimento?', x: '(x + ' + a + ')' + sup(nn), a: ans, e: 'Termo geral: C(' + nn + ', ' + k + ') · x' + sup(k) + ' · ' + a + sup(nn - k) + ' = ' + comb(nn, k) + ' × ' + Math.pow(a, nn - k) + ' = ' + ans + '.' };
+  });
+
+  // ================= NÍVEL 7 — Lendário =================
+  add('det7', 7, 'linear', 'Determinante 3×3', false, (r) => {
+    const m = [0, 1, 2].map(() => [r.int(-4, 5), r.int(-4, 5), r.int(-4, 5)]);
+    const [a, b, c] = m[0], [d, e, f] = m[1], [g, h, i] = m[2];
+    const c1 = e * i - f * h, c2 = d * i - f * g, c3 = d * h - e * g, ans = a * c1 - b * c2 + c * c3;
+    return { p: 'Calcule o determinante.', x: matrix(m), a: ans, e: 'Cofatores na 1ª linha: ' + par(a) + ' × ' + par(c1) + ' ' + M + ' ' + par(b) + ' × ' + par(c2) + ' + ' + par(c) + ' × ' + par(c3) + ' = ' + n(ans) + '.' };
+  });
+  add('cadeia7', 7, 'calculo', 'Regra da cadeia', false, (r) => {
+    const a = r.int(2, 3), nn = r.int(3, 4), v = r.nz(-3, 3), k = r.int(-2, 2), b = v - a * k;
+    const ans = nn * a * Math.pow(v, nn - 1);
+    return { p: 'Calcule f′(' + n(k) + ').', x: 'f(x) = (' + lin(a, b) + ')' + sup(nn), a: ans, e: 'f′(x) = ' + nn + ' × ' + a + ' × (' + lin(a, b) + ')' + sup(nn - 1) + '. Em x = ' + n(k) + ' o parêntese vale ' + n(v) + ': ' + n(ans) + '.' };
+  });
+  add('prod7', 7, 'calculo', 'Regra do produto', false, (r) => {
+    const a = r.int(1, 5), b = r.int(1, 4), c = r.nz(-4, 4), k = r.int(-2, 3);
+    const ans = 2 * k * (b * k + c) + b * (k * k + a);
+    return { p: 'Calcule f′(' + n(k) + ').', x: 'f(x) = (x' + sup(2) + ' + ' + a + ')(' + lin(b, c) + ')', a: ans, e: 'f′(x) = 2x(' + lin(b, c) + ') + ' + b + '(x² + ' + a + '). Em x = ' + n(k) + ': ' + n(2 * k * (b * k + c)) + ' + ' + par(b * (k * k + a)) + ' = ' + n(ans) + '.' };
+  });
+  add('int7', 7, 'calculo', 'Integral de polinômio', false, (r) => {
+    const p = r.int(1, 3), q = r.int(-3, 4), c = r.int(-5, 6), lo = r.int(1, 2), hi = lo + r.int(1, 2);
+    const F = (x) => p * x * x * x + q * x * x + c * x, ans = F(hi) - F(lo);
+    return { p: 'Calcule a integral.', x: integral(lo, hi, '(' + poly([[3 * p, 2], [2 * q, 1], [c, 0]]) + ')'), a: ans, e: 'Primitiva F(x) = ' + poly([[p, 3], [q, 2], [c, 1]]) + '. F(' + hi + ') ' + M + ' F(' + lo + ') = ' + n(F(hi)) + ' ' + M + ' ' + par(F(lo)) + ' = ' + n(ans) + '.' };
+  });
+  add('lim7', 7, 'calculo', 'Limites fundamentais', false, (r) => {
+    const v = r.int(0, 2);
+    if (v === 0) {
+      const b = r.int(1, 4), q = r.int(2, 6);
+      return { p: 'Calcule o limite.', x: limit(0, 'sen(' + b * q + 'x) / ' + (b === 1 ? '' : b) + 'x'), a: q, e: 'Como sen(u)/u → 1 quando u → 0, o limite é ' + b * q + ' ÷ ' + b + ' = ' + q + '.' };
+    }
+    if (v === 1) {
+      const a = r.int(2, 9);
+      return { p: 'Calcule o limite.', x: limit(0, '(e' + sup(a + 'x') + ' ' + M + ' 1) / x'), a: a, e: 'É a derivada de e' + sup(a + 'x') + ' em x = 0, que vale ' + a + '.' };
+    }
+    const a = 2 * r.int(1, 4);
+    return { p: 'Calcule o limite.', x: limit(0, '(1 ' + M + ' cos(' + a + 'x)) / x' + sup(2)), a: (a * a) / 2, e: '1 ' + M + ' cos(u) ≈ u²/2 perto de zero. Com u = ' + a + 'x: ' + a + '² ÷ 2 = ' + (a * a) / 2 + '.' };
+  });
+  add('inv7', 7, 'numeros', 'Inverso modular', false, (r) => {
+    const p = r.pick([11, 13, 17, 19, 23]), a = r.int(2, p - 2);
+    let x = 1; while ((a * x) % p !== 1) x++;
+    return { p: 'Qual inteiro x, entre 1 e ' + (p - 1) + ', satisfaz a congruência?', x: a + 'x ≡ 1 (mod ' + p + ')', a: x, e: a + ' × ' + x + ' = ' + a * x + ' = ' + p + ' × ' + Math.floor((a * x) / p) + ' + 1.' };
+  });
+  add('phi7', 7, 'numeros', 'Função φ de Euler', false, (r) => {
+    const v = r.pick([12, 18, 20, 24, 30, 36, 40, 45, 48, 60, 72, 84, 90, 100, 105, 120]);
+    const ps = []; let t = v; for (let p = 2; p <= t; p++) { if (t % p === 0) { ps.push(p); while (t % p === 0) t /= p; } }
+    return { p: 'Quantos inteiros de 1 a ' + v + ' são primos com ' + v + '?', x: 'φ(' + v + ')', a: phi(v), e: 'φ(n) = n × ∏(1 ' + M + ' 1/p) sobre os primos ' + ps.join(', ') + ': ' + v + ' × ' + ps.map((p) => (p - 1) + '/' + p).join(' × ') + ' = ' + phi(v) + '.' };
+  });
+  add('ult7', 7, 'numeros', 'Potências módulo 100', false, (r) => {
+    const a = r.pick([3, 7, 9, 11, 13, 17]), b = r.int(12, 99), ans = modpow(a, b, 100);
+    return { p: 'Qual é o resto da divisão por 100?', x: a + sup(b), a: ans, e: 'Como mdc(' + a + ', 100) = 1, vale ' + a + sup(20) + ' ≡ 1 (mod 100). Reduzindo o expoente: ' + b + ' mod 20 = ' + (b % 20) + ', e ' + a + sup(b % 20) + ' ≡ ' + ans + '.' };
+  });
+  add('auto7', 7, 'linear', 'Autovalores', false, (r) => {
+    const m = r.int(1, 2);
+    let l1, l2; do { l1 = r.nz(-4, 6); l2 = r.nz(-4, 6); } while (l1 === l2);
+    const A = [[l1 * (m + 1) - m * l2, l2 - l1], [m * (m + 1) * (l1 - l2), (m + 1) * l2 - m * l1]];
+    return { p: 'Qual é o maior autovalor da matriz?', x: matrix(A), a: Math.max(l1, l2), e: 'Traço = ' + n(l1 + l2) + ' e determinante = ' + n(l1 * l2) + ': λ² ' + (l1 + l2 < 0 ? '+' : M) + ' ' + Math.abs(l1 + l2) + 'λ ' + (l1 * l2 < 0 ? M : '+') + ' ' + Math.abs(l1 * l2) + ' = 0, com raízes ' + n(Math.min(l1, l2)) + ' e ' + n(Math.max(l1, l2)) + '.', _m: A };
+  });
+  add('soma7', 7, 'funcoes', 'Somatórios', false, (r) => {
+    if (r.rng() < 0.5) {
+      const k = r.int(5, 15), ans = (k * (k + 1) * (2 * k + 1)) / 6;
+      return { p: 'Quanto vale a soma dos quadrados?', x: '1' + sup(2) + ' + 2' + sup(2) + ' + … + ' + k + sup(2), a: ans, e: 'n(n + 1)(2n + 1) ÷ 6 = ' + k + ' × ' + (k + 1) + ' × ' + (2 * k + 1) + ' ÷ 6 = ' + ans + '.' };
+    }
+    const k = r.int(4, 10), t = (k * (k + 1)) / 2;
+    return { p: 'Quanto vale a soma dos cubos?', x: '1' + sup(3) + ' + 2' + sup(3) + ' + … + ' + k + sup(3), a: t * t, e: 'A soma dos cubos é o quadrado da soma 1 + … + n: ' + t + '² = ' + t * t + '.' };
+  });
+  add('conta7', 7, 'contagem', 'Contagem avançada', false, (r) => {
+    const v = r.int(0, 2);
+    if (v === 0) { const k = r.int(5, 15); return { p: 'Quantas soluções inteiras não negativas tem a equação?', x: 'x + y + z = ' + k, a: comb(k + 2, 2), e: 'Barras e estrelas: C(' + k + ' + 2, 2) = C(' + (k + 2) + ', 2) = ' + comb(k + 2, 2) + '.' }; }
+    if (v === 1) { const k = r.int(4, 9); return { p: 'Quantas soluções inteiras não negativas tem a equação?', x: 'x + y + z + w = ' + k, a: comb(k + 3, 3), e: 'Barras e estrelas: C(' + k + ' + 3, 3) = C(' + (k + 3) + ', 3) = ' + comb(k + 3, 3) + '.' }; }
+    const k = r.pick([4, 5, 6]), D = { 4: 9, 5: 44, 6: 265 }[k];
+    return { p: 'De quantas maneiras ' + k + ' pessoas podem sortear um amigo-secreto sem que ninguém tire o próprio nome?', a: D, e: 'São os desarranjos: D(n) = (n ' + M + ' 1)·(D(n ' + M + ' 1) + D(n ' + M + ' 2)), com D(2) = 1 e D(3) = 2. D(' + k + ') = ' + D + '.' };
+  });
+
+  const BY_ID = {};
+  G.forEach((g) => { BY_ID[g.id] = g; });
+
+  function make(id, rng) {
+    const g = BY_ID[id];
+    const q = g.g(helpers(rng));
+    q.gen = id; q.L = g.L; q.s = g.s;
+    return q;
+  }
+
+  const api = { G, BY_ID, LEVELS, SKILLS, mulberry32, make, gcd };
+  root.SinapseMath = api;
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+<script>/* Sinapse — interface, sessões de treino e progresso. */
+(function () {
+  'use strict';
+  const SM = window.SinapseMath;
+  const BANK = window.SINAPSE_BANK || [];
+  const BANK_ID = {};
+  BANK.forEach((q) => { BANK_ID[q.id] = q; });
+  const CATS = { ciencias: 'Ciências', tecnologia: 'Tecnologia', historia: 'História', geografia: 'Geografia', artes: 'Artes e literatura', cultura: 'Cultura e esportes' };
+  const LV = SM.LEVELS;
+  const KEY = 'sinapse.v1';
+  const TRACK = { math: 'Matemática', gk: 'Conhecimentos gerais', misto: 'Misto' };
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const fmt = (v) => (v < 0 ? '−' + Math.abs(v) : String(v));
+
+  // ---------- estado salvo no navegador ----------
+  function fresh() {
+    return { v: 1, start: null, r: { math: 300, gk: 300 }, cnt: { math: 0, gk: 0 }, hist: { math: [], gk: [] }, xp: 0, skills: {}, seen: {}, review: [], days: {}, best: { sprint: 0, combo: 0 }, daily: null, ach: {}, total: { n: 0, ok: 0, sessions: 0, perfect: 0 }, flags: {}, sound: true, track: 'misto' };
+  }
+  let S = fresh();
+  try {
+    const raw = JSON.parse(localStorage.getItem(KEY) || 'null');
+    if (raw && raw.v === 1) S = Object.assign(fresh(), raw);
+  } catch (e) { /* sem armazenamento: o app funciona, só não lembra */ }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* idem */ } }
+
+  function dayKey(d) { d = d || new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function streak() {
+    const d = new Date(); let n = 0;
+    if (!S.days[dayKey(d)]) d.setDate(d.getDate() - 1);
+    while (S.days[dayKey(d)]) { n++; d.setDate(d.getDate() - 1); }
+    return n;
+  }
+  const band = (r) => Math.min(6, Math.floor(r / 400));
+  const xpLevel = () => Math.floor(Math.sqrt(S.xp / 50)) + 1;
+  const mathQR = (L) => 200 + 400 * (L - 1);
+  const gkQR = (d) => 300 + 450 * (d - 1);
+
+  function rate(track, qr, ok) {
+    const r = S.r[track], exp = 1 / (1 + Math.pow(10, (qr - r) / 400)), k = S.cnt[track] < 30 ? 64 : 32;
+    const nr = clamp(Math.round(r + k * ((ok ? 1 : 0) - exp)), 0, 3000);
+    S.r[track] = nr; S.cnt[track]++;
+    return nr - r;
+  }
+
+  // ---------- montagem de perguntas ----------
+  function shuffled(arr, rng) {
+    const c = arr.slice();
+    for (let i = c.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [c[i], c[j]] = [c[j], c[i]]; }
+    return c;
+  }
+  function withOptions(q, o, rng) {
+    const order = shuffled([0, 1, 2, 3], rng);
+    q.type = 'mc'; q.opts = order.map((i) => o[i]); q.ci = order.indexOf(0);
+    return q;
+  }
+  function makeMath(id, rng) {
+    rng = rng || Math.random;
+    const m = SM.make(id, rng);
+    const q = { track: 'math', skill: m.s, skillName: SM.SKILLS[m.s], lv: m.L, qr: mathQR(m.L), p: m.p, x: m.x || '', eHtml: m.e, ref: 'm:' + id };
+    if (m.o) return withOptions(q, m.o, rng);
+    q.type = 'num'; q.a = m.a;
+    return q;
+  }
+  function makeGk(item, rng) {
+    const q = { track: 'gk', skill: item.c, skillName: CATS[item.c], lv: item.d, qr: gkQR(item.d), p: item.q, x: '', eHtml: esc(item.e), ref: 'gk:' + item.id };
+    return withOptions(q, item.o, rng || Math.random);
+  }
+  function fromRef(ref) {
+    if (ref.indexOf('m:') === 0) return SM.BY_ID[ref.slice(2)] ? makeMath(ref.slice(2)) : null;
+    const it = BANK_ID[ref.slice(3)];
+    return it ? makeGk(it) : null;
+  }
+  function pickMath(L, skill, last, fast) {
+    let pool = SM.G.filter((g) => (!skill || g.s === skill) && (!fast || g.fast));
+    const levels = Array.from(new Set(pool.map((g) => g.L)));
+    const near = levels.reduce((a, b) => (Math.abs(b - L) < Math.abs(a - L) ? b : a), levels[0]);
+    pool = pool.filter((g) => g.L === near);
+    const alt = pool.filter((g) => g.id !== last);
+    const g = (alt.length ? alt : pool)[Math.floor(Math.random() * (alt.length ? alt.length : pool.length))];
+    return makeMath(g.id);
+  }
+  function pickGk(d, cat, used) {
+    let pool = BANK.filter((q) => (!cat || q.c === cat) && !used.has(q.id));
+    if (!pool.length) pool = BANK.filter((q) => !cat || q.c === cat);
+    const levels = Array.from(new Set(pool.map((q) => q.d)));
+    const near = levels.reduce((a, b) => (Math.abs(b - d) < Math.abs(a - d) ? b : a), levels[0]);
+    pool = pool.filter((q) => q.d === near);
+    const min = Math.min.apply(null, pool.map((q) => S.seen[q.id] || 0));
+    pool = pool.filter((q) => (S.seen[q.id] || 0) === min);
+    const it = pool[Math.floor(Math.random() * pool.length)];
+    used.add(it.id);
+    return makeGk(it);
+  }
+  function buildDaily() {
+    const key = dayKey(), rng = SM.mulberry32(Number(key.replace(/-/g, '')));
+    const list = [];
+    for (let L = 1; L <= 5; L++) {
+      const gens = SM.G.filter((g) => g.L === L);
+      list.push(makeMath(gens[Math.floor(rng() * gens.length)].id, rng));
+      const pool = BANK.filter((q) => q.d === L);
+      if (pool.length) list.push(makeGk(pool[Math.floor(rng() * pool.length)], rng));
+    }
+    return list;
+  }
+
+  // ---------- sessão ----------
+  let ses = null, timer = null, toastT = null;
+
+  function start(o) {
+    stopTimer();
+    ses = { mode: o.mode, track: o.track || 'math', level: o.level ? Number(o.level) : null, skill: o.skill || null, cat: o.cat || null, total: 10, i: 0, log: [], combo: 0, xp: 0, r0: { math: S.r.math, gk: S.r.gk }, q: null, fb: null, buf: '', used: new Set(), last: null, list: null, done: false, newAch: [] };
+    if (o.mode === 'diario') { ses.list = buildDaily(); ses.total = ses.list.length; }
+    if (o.mode === 'revisao') {
+      ses.list = S.review.slice(0, 10).map(fromRef).filter(Boolean); ses.total = ses.list.length;
+      if (!ses.total) { ses = null; return; }
+    }
+    if (o.mode === 'sprint') {
+      ses.total = Infinity; ses.end = Date.now() + 60000;
+      timer = setInterval(tick, 100);
+    }
+    advance();
+    window.scrollTo(0, 0);
+  }
+  function stopTimer() { if (timer) { clearInterval(timer); timer = null; } }
+  function tick() {
+    if (!ses || ses.done) return stopTimer();
+    const left = ses.end - Date.now();
+    if (left <= 0) return finish();
+    const bar = $('#timebar'), lab = $('#timeleft');
+    if (bar) bar.style.width = (left / 600) + '%';
+    if (lab) lab.textContent = Math.ceil(left / 1000) + ' s';
+  }
+  function nextQuestion() {
+    if (ses.list) return ses.list[ses.i];
+    if (ses.mode === 'sprint') {
+      const pl = Math.min(band(S.r.math) + 1, 5);
+      const L = clamp(pl - Math.floor(Math.random() * 3), 1, 5);
+      return pickMath(L, null, ses.last, true);
+    }
+    const tr = ses.track === 'misto' ? (ses.i % 2 ? 'gk' : 'math') : ses.track;
+    const target = S.r[tr] + (Math.random() * 500 - 250);
+    if (tr === 'math') {
+      const L = ses.level || clamp(Math.round((target - 200) / 400) + 1, 1, 7);
+      return pickMath(L, ses.skill, ses.last, false);
+    }
+    const d = ses.level ? Math.min(5, ses.level) : clamp(Math.round((target - 300) / 450) + 1, 1, 5);
+    return pickGk(d, ses.cat, ses.used);
+  }
+  function advance() {
+    if (ses.i >= ses.total) return finish();
+    ses.q = nextQuestion(); ses.last = ses.q.ref.slice(2);
+    ses.fb = null; ses.buf = ''; ses.t0 = Date.now();
+    render();
+  }
+  function submit(val) {
+    if (!ses || ses.fb || ses.done) return;
+    const q = ses.q;
+    if (q.type === 'num' && (val === '' || val === '-' || isNaN(Number(val)))) return;
+    const ok = q.type === 'mc' ? val === q.ci : Number(val) === q.a;
+    const dt = (Date.now() - ses.t0) / 1000;
+    const dr = ses.mode === 'treino' ? rate(q.track, q.qr, ok) : 0;
+    const sk = S.skills[q.skill] || (S.skills[q.skill] = { n: 0, ok: 0 });
+    sk.n++; if (ok) sk.ok++;
+    const dk = dayKey(), day = S.days[dk] || (S.days[dk] = { n: 0, ok: 0 });
+    day.n++; if (ok) day.ok++;
+    S.total.n++; if (ok) S.total.ok++;
+    if (q.track === 'gk') { const id = q.ref.slice(3); S.seen[id] = (S.seen[id] || 0) + 1; }
+    ses.combo = ok ? ses.combo + 1 : 0;
+    S.best.combo = Math.max(S.best.combo, ses.combo);
+    let xp = 0;
+    if (ok) xp = ses.mode === 'sprint' ? 5 : 10 + 4 * (q.lv - 1) + Math.min(ses.combo - 1, 5) * 2 + (dt < 8 ? 3 : 0);
+    S.xp += xp; ses.xp += xp;
+    const at = S.review.indexOf(q.ref);
+    if (!ok && at < 0) { S.review.unshift(q.ref); S.review.length = Math.min(S.review.length, 40); }
+    if (ok && at >= 0 && ses.mode === 'revisao') { S.review.splice(at, 1); if (!S.review.length) S.flags.cleared = true; }
+    ses.log.push({ q: q, ok: ok, val: val, dr: dr });
+    save(); beep(ok);
+    if (ses.mode === 'sprint') {
+      ses.i++; ses.flash = ok ? 'ok' : 'bad';
+      return advance();
+    }
+    ses.fb = { ok: ok, dr: dr, xp: xp };
+    render();
+    const nx = $('#next'); if (nx) nx.focus();
+  }
+  function finish() {
+    stopTimer();
+    const okN = ses.log.filter((l) => l.ok).length;
+    ses.done = true; ses.okN = okN;
+    if (ses.log.length) {
+      S.total.sessions++;
+      if (ses.mode === 'treino') ['math', 'gk'].forEach((t) => { if (ses.log.some((l) => l.q.track === t)) { S.hist[t].push(S.r[t]); if (S.hist[t].length > 40) S.hist[t].shift(); } });
+      if (ses.mode !== 'sprint' && ses.log.length >= 10 && okN === ses.log.length) S.total.perfect++;
+      if (ses.mode === 'sprint') { ses.record = okN > S.best.sprint; S.best.sprint = Math.max(S.best.sprint, okN); }
+      if (ses.mode === 'diario' && (!S.daily || S.daily.date !== dayKey())) S.daily = { date: dayKey(), score: okN, total: ses.log.length, marks: ses.log.map((l) => (l.ok ? 1 : 0)) };
+    }
+    ses.newAch = checkAch();
+    save(); render(); window.scrollTo(0, 0);
+  }
+
+  // ---------- conquistas ----------
+  const ACH = [
+    ['primeira', 'Primeiro treino', 'Conclua uma sessão.', () => S.total.sessions >= 1],
+    ['perfeito', 'Dez de dez', 'Acerte todas as perguntas de uma sessão.', () => S.total.perfect >= 1],
+    ['combo10', 'Em chamas', 'Acerte 10 seguidas.', () => S.best.combo >= 10],
+    ['combo25', 'Imparável', 'Acerte 25 seguidas.', () => S.best.combo >= 25],
+    ['cem', 'Cem respostas', 'Responda 100 perguntas.', () => S.total.n >= 100],
+    ['quinhentas', 'Quinhentas respostas', 'Responda 500 perguntas.', () => S.total.n >= 500],
+    ['dias3', 'Três dias seguidos', 'Treine 3 dias seguidos.', () => streak() >= 3],
+    ['dias7', 'Semana completa', 'Treine 7 dias seguidos.', () => streak() >= 7],
+    ['sprint15', 'Cálculo rápido', 'Faça 15 pontos no Sprint.', () => S.best.sprint >= 15],
+    ['sprint25', 'Calculadora humana', 'Faça 25 pontos no Sprint.', () => S.best.sprint >= 25],
+    ['diario', 'Desafio cumprido', 'Complete um Desafio do dia.', () => !!S.daily],
+    ['limpa', 'Sem pendências', 'Zere a fila de revisão.', () => !!S.flags.cleared],
+    ['todos', 'Generalista', 'Responda perguntas dos 15 temas.', () => Object.keys(S.skills).length >= 15],
+    ['avancado', 'Matemática avançada', 'Chegue a 1200 em Matemática.', () => S.r.math >= 1200],
+    ['mestre', 'Mestre dos números', 'Chegue a 2000 em Matemática.', () => S.r.math >= 2000],
+    ['lendario', 'Lendário', 'Chegue a 2400 em Matemática.', () => S.r.math >= 2400],
+    ['sabio', 'Enciclopédia', 'Chegue a 1600 em Conhecimentos gerais.', () => S.r.gk >= 1600]
+  ];
+  function checkAch() {
+    const got = [];
+    ACH.forEach((a) => { if (!S.ach[a[0]] && a[3]()) { S.ach[a[0]] = dayKey(); got.push(a[1]); } });
+    return got;
+  }
+
+  // ---------- som ----------
+  let actx = null;
+  function beep(ok) {
+    if (!S.sound) return;
+    try {
+      actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+      const t = actx.currentTime;
+      (ok ? [660, 880] : [196]).forEach((f, i) => {
+        const o = actx.createOscillator(), g = actx.createGain();
+        o.type = ok ? 'sine' : 'triangle'; o.frequency.value = f;
+        g.gain.setValueAtTime(0.0001, t + i * 0.09);
+        g.gain.exponentialRampToValueAtTime(0.12, t + i * 0.09 + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.09 + (ok ? 0.16 : 0.3));
+        o.connect(g); g.connect(actx.destination);
+        o.start(t + i * 0.09); o.stop(t + i * 0.09 + 0.35);
+      });
+    } catch (e) { /* sem áudio */ }
+  }
+  function toast(msg) {
+    let t = $('#toast');
+    if (!t) { t = document.createElement('div'); t.id = 'toast'; t.className = 'toast'; t.setAttribute('role', 'status'); document.body.appendChild(t); }
+    t.textContent = msg; t.hidden = false;
+    clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 2200);
+  }
+
+  // ---------- telas ----------
+  let confirmReset = false;
+  function view() { return location.hash === '#progresso' ? 'progresso' : 'treinar'; }
+
+  function renderChips() {
+    const st = streak();
+    $('#chips').innerHTML =
+      '<span class="chip" title="Dias seguidos de treino"><b>' + st + '</b> ' + (st === 1 ? 'dia seguido' : 'dias seguidos') + '</span>' +
+      '<span class="chip" title="' + S.xp + ' pontos de experiência">Nível <b>' + xpLevel() + '</b></span>' +
+      '<button class="chip" data-act="sound" aria-pressed="' + S.sound + '">Som ' + (S.sound ? 'ligado' : 'desligado') + '</button>';
+    document.querySelectorAll('.tabs a').forEach((a) => {
+      if (!ses && a.dataset.tab === view()) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+    });
+  }
+  function pin(track, cls) {
+    const r = S.r[track], p = clamp(r / 2800 * 100, 0, 100).toFixed(1);
+    return '<div class="pin ' + cls + '" style="--p:' + p + '%"><i>' + TRACK[track] + ' · <span class="num">' + r + '</span> · ' + LV[band(r)] + '</i></div>';
+  }
+  function ruler() {
+    return '<div class="ruler-box"><p class="eyebrow">Sua posição na régua</p>' +
+      '<div class="ruler" role="img" aria-label="Matemática: ' + S.r.math + ' pontos, nível ' + LV[band(S.r.math)] + '. Conhecimentos gerais: ' + S.r.gk + ' pontos, nível ' + LV[band(S.r.gk)] + '.">' +
+      '<div class="seg7">' + LV.map((_, i) => '<span>' + i * 400 + '</span>').join('') + '</div>' + pin('math', 'up') + pin('gk', 'down gk') + '</div>' +
+      '<div class="ruler-legend">' + LV.map((n) => '<span>' + n + '</span>').join('') + '</div></div>';
+  }
+  function meter(sk) {
+    const pct = sk && sk.n ? Math.round(sk.ok / sk.n * 100) : 0;
+    return '<div class="meter"><i style="width:' + pct + '%"></i></div>';
+  }
+  function renderHome() {
+    const first = S.total.n === 0;
+    const dailyDone = S.daily && S.daily.date === dayKey();
+    const starts = [['zero', 'Do zero', 300], ['medio', 'Já sei o básico', 1000], ['alto', 'Avançado', 1800]];
+    let h = '<section class="hero"><div>' +
+      '<p class="eyebrow">Matemática e conhecimentos gerais</p>' +
+      '<h1>Do <em>7 + 5</em> aos <em>autovalores</em>.</h1>' +
+      '<p class="lead">Dez perguntas por sessão. Acertou, a próxima sobe; errou, o Sinapse volta um passo e mostra a resolução. São ' + SM.G.length + ' tipos de exercício gerados na hora e ' + BANK.length + ' perguntas de cultura geral.</p>' +
+      '<div class="go"><div class="seg" role="group" aria-label="Trilha">' +
+      ['misto', 'math', 'gk'].map((t) => '<button data-act="track" data-track="' + t + '" aria-pressed="' + (S.track === t) + '">' + TRACK[t] + '</button>').join('') +
+      '</div><button class="btn primary big" data-act="start" data-mode="treino" data-track="' + S.track + '">Começar treino</button></div>';
+    if (first) h += '<div class="startpick"><span>Ponto de partida:</span>' + starts.map((s) => '<button class="btn small" data-act="setstart" data-r="' + s[2] + '" aria-pressed="' + (S.r.math === s[2]) + '"' + (S.r.math === s[2] ? ' style="border-color:var(--ink)"' : '') + '>' + s[1] + '</button>').join('') + '</div>';
+    h += '</div>' + ruler() + '</section>';
+
+    h += '<section class="section"><header><h2>Outros modos</h2></header><div class="modes">' +
+      '<button class="mode" data-act="start" data-mode="sprint"><h3>Sprint de 60 segundos</h3><p>Contas rápidas contra o relógio. Cada acerto vale um ponto.</p><span class="stat">Recorde: ' + S.best.sprint + '</span></button>' +
+      '<button class="mode" data-act="start" data-mode="diario"><h3>Desafio do dia</h3><p>As mesmas dez perguntas para todo mundo, da mais fácil à mais difícil.</p><span class="stat">' + (dailyDone ? 'Hoje: ' + S.daily.score + '/' + S.daily.total + ' · jogar de novo' : 'Ainda não feito hoje') + '</span></button>' +
+      '<button class="mode" data-act="start" data-mode="revisao"' + (S.review.length ? '' : ' disabled') + '><h3>Revisão de erros</h3><p>Refaz o que você errou. Acertou, sai da fila.</p><span class="stat">' + (S.review.length ? S.review.length + ' na fila' : 'Fila vazia') + '</span></button>' +
+      '</div></section>';
+
+    h += '<section class="section"><header><h2>Os sete níveis</h2><p class="hint">Escolha um degrau para treinar só nele.</p></header><div class="ladder">';
+    LV.forEach((name, i) => {
+      const L = i + 1, topics = SM.G.filter((g) => g.L === L).map((g) => g.t);
+      const hm = band(S.r.math) === i, hg = band(S.r.gk) === i;
+      h += '<div class="rung' + (hm || hg ? ' here' : '') + '"><span class="n">' + L + '</span><div><h3>' + name + ' <small>' + i * 400 + (i === 6 ? '+' : '–' + (i * 400 + 399)) + '</small>' +
+        (hm ? '<span class="tag">você em matemática</span>' : '') + (hg ? '<span class="tag">você em conhecimentos</span>' : '') + '</h3>' +
+        '<p class="topics">' + topics.join(' · ') + '</p></div><div class="acts">' +
+        '<button class="btn small" data-act="start" data-mode="treino" data-track="math" data-level="' + L + '">Matemática</button>' +
+        (L <= 5 ? '<button class="btn small" data-act="start" data-mode="treino" data-track="gk" data-level="' + L + '">Conhecimentos</button>' : '') +
+        '</div></div>';
+    });
+    h += '</div></section>';
+
+    h += '<section class="section"><header><h2>Treinar por tema</h2><p class="hint">A dificuldade se ajusta dentro do tema.</p></header><div class="themes">';
+    const card = (id, name, kind, attr) => {
+      const sk = S.skills[id];
+      return '<button class="theme" data-act="start" data-mode="treino" ' + attr + '><span class="t"><b>' + name + '</b><span>' + kind + '</span></span>' + meter(sk) +
+        '<small>' + (sk ? sk.ok + ' de ' + sk.n + ' certas (' + Math.round(sk.ok / sk.n * 100) + '%)' : 'Ainda não treinado') + '</small></button>';
+    };
+    Object.keys(SM.SKILLS).forEach((id) => { h += card(id, SM.SKILLS[id], 'mat', 'data-track="math" data-skill="' + id + '"'); });
+    Object.keys(CATS).forEach((id) => { h += card(id, CATS[id], 'geral', 'data-track="gk" data-cat="' + id + '"'); });
+    h += '</div></section>';
+    return h;
+  }
+
+  function modeName() {
+    if (ses.mode === 'sprint') return 'Sprint de 60 segundos';
+    if (ses.mode === 'diario') return 'Desafio do dia';
+    if (ses.mode === 'revisao') return 'Revisão de erros';
+    if (ses.skill) return SM.SKILLS[ses.skill];
+    if (ses.cat) return CATS[ses.cat];
+    if (ses.level) return TRACK[ses.track] + ' · nível ' + ses.level;
+    return 'Treino · ' + TRACK[ses.track];
+  }
+  function renderSession() {
+    const q = ses.q, fb = ses.fb, sprint = ses.mode === 'sprint';
+    let h = '<div class="ses"><div class="ses-head"><div class="where">' + esc(modeName()) + '<small>' + esc(q.skillName) + ' · ' + (q.track === 'math' ? LV[q.lv - 1] : 'nível ' + q.lv + ' de 5') + '</small></div><div class="right">';
+    if (sprint) h += '<span class="chip"><b id="timeleft">' + Math.ceil((ses.end - Date.now()) / 1000) + ' s</b></span><span class="chip">Pontos <b>' + ses.log.filter((l) => l.ok).length + '</b></span>';
+    else h += '<span class="chip"><b>' + (ses.i + 1) + '/' + ses.total + '</b></span>';
+    h += '<button class="btn small" data-act="quit">Sair</button></div></div>';
+    if (sprint) h += '<div class="timebar"><i id="timebar" style="width:' + Math.max(0, (ses.end - Date.now()) / 600) + '%"></i></div>';
+    else {
+      h += '<div class="dots" aria-hidden="true">';
+      for (let i = 0; i < ses.total; i++) h += '<i class="' + (ses.log[i] ? (ses.log[i].ok ? 'ok' : 'bad') : i === ses.i ? 'now' : '') + '"></i>';
+      h += '</div>';
+    }
+    h += '<div class="card' + (ses.flash ? ' flash-' + ses.flash : '') + '">';
+    h += '<p class="q-p' + (q.x ? '' : ' solo') + '">' + esc(q.p) + '</p>';
+    if (q.x) h += '<div class="q-x">' + q.x + '</div>';
+    if (q.type === 'mc') {
+      const last = fb ? ses.log[ses.log.length - 1] : null;
+      h += '<div class="opts">' + q.opts.map((o, i) => {
+        let c = 'opt' + (q.track === 'math' ? ' mathopt' : '');
+        if (fb && i === q.ci) c += ' right'; else if (fb && last.val === i) c += ' wrong';
+        return '<button class="' + c + '" data-act="opt" data-i="' + i + '"' + (fb ? ' disabled' : '') + '><kbd>' + (i + 1) + '</kbd><span>' + esc(o) + '</span></button>';
+      }).join('') + '</div>';
+    } else if (!fb) {
+      h += '<div class="entry"><div class="display' + (ses.buf ? '' : ' empty') + '" aria-live="polite">' + (ses.buf ? esc(ses.buf.replace('-', '−')) : 'Digite a resposta') + '<span class="caret"></span></div>' +
+        '<div class="keypad">' + ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'].map((k) => '<button data-act="key" data-k="' + k + '">' + k + '</button>').join('') +
+        '<button data-act="key" data-k="-" aria-label="Trocar sinal">±</button><button data-act="key" data-k="back" aria-label="Apagar">⌫</button>' +
+        '<button class="okk" data-act="key" data-k="enter">Responder</button></div></div>';
+    }
+    if (fb) {
+      const ans = q.type === 'num' ? fmt(q.a) : q.opts[q.ci];
+      const mine = q.type === 'num' ? fmt(Number(ses.log[ses.log.length - 1].val)) : null;
+      h += '<div class="fb ' + (fb.ok ? 'ok' : 'bad') + '" role="status"><strong>' + (fb.ok ? 'Certo' : 'Resposta: ' + esc(ans)) +
+        '<small>' + (fb.ok ? '+' + fb.xp + ' XP' : mine !== null ? 'você respondeu ' + mine : '') + (ses.mode === 'treino' ? ' · régua ' + (fb.dr >= 0 ? '+' : '−') + Math.abs(fb.dr) : '') + (fb.ok && ses.combo >= 3 ? ' · ' + ses.combo + ' seguidas' : '') + '</small></strong>' +
+        '<p>' + q.eHtml + '</p></div><div class="fb-row"><button class="btn primary" id="next" data-act="next">' + (ses.i + 1 >= ses.total ? 'Ver resultado' : 'Próxima') + ' <span class="mono" aria-hidden="true">↵</span></button></div>';
+    }
+    h += '</div></div>';
+    ses.flash = null;
+    return h;
+  }
+  function renderResult() {
+    const n = ses.log.length, ok = ses.okN, sprint = ses.mode === 'sprint';
+    const title = !n ? 'Sessão encerrada' : sprint ? ok + (ok === 1 ? ' ponto' : ' pontos') : ok + ' de ' + n;
+    let h = '<div class="ses result"><p class="eyebrow">' + esc(modeName()) + '</p><h1>' + title + '</h1>';
+    if (ses.newAch.length) h += '<div class="newach">Conquista' + (ses.newAch.length > 1 ? 's' : '') + ' nova' + (ses.newAch.length > 1 ? 's' : '') + ': ' + ses.newAch.map(esc).join(', ') + '</div>';
+    h += '<div class="tiles"><div class="tile"><span>Experiência</span><b>+' + ses.xp + '</b><small>nível ' + xpLevel() + '</small></div>';
+    if (sprint) h += '<div class="tile"><span>Recorde</span><b>' + S.best.sprint + '</b><small>' + (ses.record ? 'recorde novo' : 'seu melhor') + '</small></div>';
+    if (ses.mode === 'treino') ['math', 'gk'].forEach((t) => {
+      if (!ses.log.some((l) => l.q.track === t)) return;
+      const d = S.r[t] - ses.r0[t];
+      h += '<div class="tile"><span>' + TRACK[t] + '</span><b>' + S.r[t] + '</b><small class="' + (d >= 0 ? 'up' : 'down') + '">' + (d >= 0 ? '+' : '−') + Math.abs(d) + ' na régua · ' + LV[band(S.r[t])] + '</small></div>';
+    });
+    h += '</div><div class="rowbtns"><button class="btn primary" data-act="again">Jogar de novo</button><button class="btn" data-act="home">Voltar ao início</button>' +
+      (ses.mode === 'diario' && n ? '<button class="btn" data-act="share">Copiar resultado</button>' : '') + '</div>';
+    if (n) {
+      h += '<ul class="review">' + ses.log.map((l) => {
+        const q = l.q, ans = q.type === 'num' ? fmt(q.a) : q.opts[q.ci];
+        return '<li><span class="ic ' + (l.ok ? 'ok' : 'bad') + '">' + (l.ok ? '✓' : '✗') + '</span><span>' + esc(q.p) + (q.x ? ' <span class="qx">' + q.x.replace(/<br>/g, ' ; ') + '</span>' : '') + '</span>' +
+          '<small>Resposta: ' + esc(ans) + (l.ok ? '' : ' — ' + q.eHtml) + '</small></li>';
+      }).join('') + '</ul>';
+    }
+    return h + '</div>';
+  }
+
+  function spark(track) {
+    const pts = S.hist[track];
+    let h = '<div class="chart"><h3>' + TRACK[track] + ' <span>' + S.r[track] + ' · ' + LV[band(S.r[track])] + '</span></h3>';
+    if (pts.length < 2) return h + '<p class="empty">Conclua dois treinos nesta trilha para ver a curva.</p></div>';
+    const W = 300, H = 90, lo = Math.min.apply(null, pts) - 40, hi = Math.max.apply(null, pts) + 40;
+    const X = (i) => 6 + i * (W - 12) / (pts.length - 1), Y = (v) => H - 8 - (v - lo) / (hi - lo) * (H - 16);
+    const line = pts.map((v, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1)).join(' ');
+    h += '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Evolução em ' + TRACK[track] + ': de ' + pts[0] + ' para ' + pts[pts.length - 1] + ' em ' + pts.length + ' sessões.">' +
+      '<path d="' + line + ' L' + X(pts.length - 1).toFixed(1) + ' ' + H + ' L6 ' + H + ' Z" fill="var(--blue-soft)" stroke="none"/>' +
+      '<path d="' + line + '" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>' +
+      pts.map((v, i) => '<circle cx="' + X(i).toFixed(1) + '" cy="' + Y(v).toFixed(1) + '" r="' + (i === pts.length - 1 ? 4.5 : 7) + '" fill="' + (i === pts.length - 1 ? 'var(--blue)' : 'transparent') + '" stroke="' + (i === pts.length - 1 ? 'var(--surface)' : 'none') + '" stroke-width="2"><title>Sessão ' + (i + 1) + ': ' + v + '</title></circle>').join('') +
+      '</svg><div class="axis"><span>início ' + pts[0] + '</span><span>' + pts.length + ' sessões</span><span>agora ' + pts[pts.length - 1] + '</span></div></div>';
+    return h;
+  }
+  function activity() {
+    const days = [];
+    for (let i = 13; i >= 0; i--) { const d = new Date(); d.setDate(d.getDate() - i); days.push({ d: d, v: (S.days[dayKey(d)] || { n: 0 }).n }); }
+    const max = Math.max(1, Math.max.apply(null, days.map((x) => x.v)));
+    return '<div class="chart"><h3>Últimos 14 dias <span>perguntas por dia</span></h3><div class="bars" role="img" aria-label="Perguntas respondidas por dia nos últimos 14 dias.">' +
+      days.map((x) => '<i class="' + (x.v ? '' : 'zero') + '" style="height:' + (x.v / max * 100) + '%" data-tip="' + x.d.getDate() + '/' + (x.d.getMonth() + 1) + ': ' + x.v + '"></i>').join('') +
+      '</div><div class="axis"><span>' + days[0].d.getDate() + '/' + (days[0].d.getMonth() + 1) + '</span><span>máx. ' + max + '</span><span>hoje</span></div></div>';
+  }
+  function renderProgress() {
+    const acc = S.total.n ? Math.round(S.total.ok / S.total.n * 100) + '%' : '–';
+    let h = '<section class="section"><header><h2>Seu progresso</h2><p class="hint">Fica salvo neste navegador.</p></header>' +
+      '<div class="tiles"><div class="tile"><span>Perguntas respondidas</span><b>' + S.total.n + '</b><small>' + S.total.sessions + ' sessões</small></div>' +
+      '<div class="tile"><span>Aproveitamento</span><b>' + acc + '</b><small>' + S.total.ok + ' certas</small></div>' +
+      '<div class="tile"><span>Dias seguidos</span><b>' + streak() + '</b><small>' + Object.keys(S.days).length + (Object.keys(S.days).length === 1 ? ' dia' : ' dias') + ' de treino</small></div>' +
+      '<div class="tile"><span>Maior sequência</span><b>' + S.best.combo + '</b><small>acertos seguidos</small></div>' +
+      '<div class="tile"><span>Experiência</span><b>' + S.xp + '</b><small>nível ' + xpLevel() + ' · próximo em ' + (50 * xpLevel() * xpLevel()) + '</small></div></div></section>';
+    h += '<section class="section">' + ruler() + '<div class="charts">' + spark('math') + spark('gk') + activity() + '</div></section>';
+    h += '<section class="section"><header><h2>Aproveitamento por tema</h2></header><div class="skills">';
+    const row = (id, name) => { const sk = S.skills[id]; return '<div class="skill"><span>' + name + '</span>' + meter(sk) + '<span>' + (sk ? Math.round(sk.ok / sk.n * 100) + '% de ' + sk.n : 'sem dados') + '</span></div>'; };
+    Object.keys(SM.SKILLS).forEach((id) => { h += row(id, SM.SKILLS[id]); });
+    Object.keys(CATS).forEach((id) => { h += row(id, CATS[id]); });
+    h += '</div></section>';
+    const got = ACH.filter((a) => S.ach[a[0]]).length;
+    h += '<section class="section"><header><h2>Conquistas</h2><p class="hint">' + got + ' de ' + ACH.length + '</p></header><div class="achs">' +
+      ACH.map((a) => '<div class="ach' + (S.ach[a[0]] ? ' got' : '') + '"><b>' + a[1] + '</b><small>' + a[2] + '</small></div>').join('') + '</div></section>';
+    h += '<section class="section"><div class="resetbox">' + (confirmReset
+      ? '<span>Apagar todo o progresso deste navegador?</span><button class="btn small danger" data-act="reset-yes">Apagar tudo</button><button class="btn small" data-act="reset-no">Cancelar</button>'
+      : '<button class="btn small" data-act="reset-ask">Apagar progresso</button>') + '</div></section>';
+    return h;
+  }
+
+  function render() {
+    renderChips();
+    const app = $('#app');
+    if (ses) app.innerHTML = ses.done ? renderResult() : renderSession();
+    else app.innerHTML = view() === 'progresso' ? renderProgress() : renderHome();
+  }
+
+  // ---------- eventos ----------
+  function key(k) {
+    if (!ses || ses.fb || ses.done || ses.q.type !== 'num') return;
+    if (k === 'enter') return submit(ses.buf);
+    if (k === 'back') ses.buf = ses.buf.slice(0, -1);
+    else if (k === '-') ses.buf = ses.buf[0] === '-' ? ses.buf.slice(1) : '-' + ses.buf;
+    else if (ses.buf.replace('-', '').length < 8) ses.buf += k;
+    render();
+  }
+  document.addEventListener('click', (ev) => {
+    const el = ev.target.closest('[data-act]');
+    if (!el) return;
+    const a = el.dataset.act, d = el.dataset;
+    if (a === 'start') start({ mode: d.mode, track: d.track, level: d.level, skill: d.skill, cat: d.cat });
+    else if (a === 'track') { S.track = d.track; save(); render(); }
+    else if (a === 'setstart') { S.r.math = S.r.gk = Number(d.r); save(); render(); }
+    else if (a === 'opt') submit(Number(d.i));
+    else if (a === 'key') key(d.k);
+    else if (a === 'next') { ses.i++; advance(); }
+    else if (a === 'quit') { if (ses.log.length && ses.mode !== 'revisao') finish(); else { stopTimer(); ses = null; render(); } }
+    else if (a === 'again') start({ mode: ses.mode, track: ses.track, level: ses.level, skill: ses.skill, cat: ses.cat });
+    else if (a === 'home') { ses = null; render(); window.scrollTo(0, 0); }
+    else if (a === 'sound') { S.sound = !S.sound; save(); render(); }
+    else if (a === 'reset-ask') { confirmReset = true; render(); }
+    else if (a === 'reset-no') { confirmReset = false; render(); }
+    else if (a === 'reset-yes') { S = fresh(); confirmReset = false; save(); render(); toast('Progresso apagado'); }
+    else if (a === 'share') {
+      const txt = 'Sinapse · Desafio do dia ' + new Date().toLocaleDateString('pt-BR') + ': ' + ses.okN + '/' + ses.log.length + ' ' + ses.log.map((l) => (l.ok ? '🟩' : '🟥')).join('');
+      try { navigator.clipboard.writeText(txt).then(() => toast('Resultado copiado'), () => toast(txt)); } catch (e) { toast(txt); }
+    }
+  });
+  document.addEventListener('keydown', (ev) => {
+    if (!ses || ses.done || ev.ctrlKey || ev.metaKey || ev.altKey) return;
+    const k = ev.key;
+    if (ses.fb) { if (k === 'Enter' || k === ' ') { ev.preventDefault(); ses.i++; advance(); } return; }
+    if (ses.q.type === 'mc') { if (k >= '1' && k <= '4') { ev.preventDefault(); submit(Number(k) - 1); } return; }
+    if (k >= '0' && k <= '9') { ev.preventDefault(); key(k); }
+    else if (k === '-') { ev.preventDefault(); key('-'); }
+    else if (k === 'Backspace') { ev.preventDefault(); key('back'); }
+    else if (k === 'Enter') { ev.preventDefault(); key('enter'); }
+  });
+  window.addEventListener('hashchange', () => { if (ses && !ses.done) return; ses = null; confirmReset = false; render(); });
+
+  render();
+})();
+</script>
+</body>
+</html>
